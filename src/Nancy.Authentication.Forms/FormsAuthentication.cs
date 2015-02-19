@@ -1,11 +1,12 @@
 namespace Nancy.Authentication.Forms
 {
     using System;
-    using Bootstrapper;
-    using Cookies;
-    using Cryptography;
-    using Helpers;
+
+    using Nancy.Bootstrapper;
+    using Nancy.Cookies;
+    using Nancy.Cryptography;
     using Nancy.Extensions;
+    using Nancy.Helpers;
     using Nancy.Security;
 
     /// <summary>
@@ -355,7 +356,7 @@ namespace Nancy.Authentication.Forms
         public static string DecryptAndValidateAuthenticationCookie(string cookieValue, FormsAuthenticationConfiguration configuration)
         {
             // TODO - shouldn't this be automatically decoded by nancy cookie when that change is made?
-            var decodedCookie = Helpers.HttpUtility.UrlDecode(cookieValue);
+            var decodedCookie = HttpUtility.UrlDecode(cookieValue);
 
             var hmacStringLength = Base64Helpers.GetBase64Length(configuration.CryptographyConfiguration.HmacProvider.HmacLength);
 
