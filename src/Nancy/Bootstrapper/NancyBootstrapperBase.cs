@@ -246,7 +246,7 @@
 
             this.ConfigureApplicationContainer(this.ApplicationContainer);
 
-            var typeRegistrations = this.InternalConfiguration.GetTypeRegistations()
+            var typeRegistrations = this.InternalConfiguration.GetTypeRegistrations()
                                         .Concat(this.GetAdditionalTypes());
 
             var collectionTypeRegistrations = this.InternalConfiguration.GetCollectionTypeRegistrations()
