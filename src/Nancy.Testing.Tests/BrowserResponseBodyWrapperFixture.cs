@@ -3,8 +3,9 @@
     using System.IO;
     using System.Linq;
     using System.Text;
-    using Nancy;
+    using FakeItEasy;
     using Nancy.Tests;
+
     using Xunit;
 
     public class BrowserResponseBodyWrapperFixture
@@ -21,7 +22,7 @@
                     writer.Write("This is the content");
                     writer.Flush();
                 }
-            });
+            }, A.Dummy<BrowserContext>());
 
             var content = Encoding.ASCII.GetBytes("This is the content");
 
@@ -44,7 +45,7 @@
                     writer.Write("<div>Outer and <div id='bar'>inner</div></div>");
                     writer.Flush();
                 }
-            });
+            }, A.Dummy<BrowserContext>());
 
             // When
             var result = body["#bar"];

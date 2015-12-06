@@ -1,6 +1,7 @@
 ﻿namespace Nancy.Validation.DataAnnotations.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.ComponentModel;
     using System.ComponentModel.DataAnnotations;
     using System.Linq;
@@ -8,9 +9,8 @@
     using FakeItEasy;
 
     using Nancy.Tests;
-    using Nancy.Validation.DataAnnotations;
+
     using Xunit;
-    using System.Collections.Generic;
 
     public class DataAnnotationValidatorFixture
     {

@@ -2,7 +2,9 @@ namespace Nancy.ModelBinding.DefaultBodyDeserializers
 {
     using System.IO;
     using System.Reflection;
-    using Json;
+    using Nancy.Configuration;
+    using Nancy.Json;
+    using Nancy.Responses.Negotiation;
 
     /// <summary>
     /// Deserializes request bodies in JSON format
@@ -10,29 +12,49 @@ namespace Nancy.ModelBinding.DefaultBodyDeserializers
     public class JsonBodyDeserializer : IBodyDeserializer
     {
         private readonly MethodInfo deserializeMethod = typeof(JavaScriptSerializer).GetMethod("Deserialize", BindingFlags.Instance | BindingFlags.Public);
+        private readonly JsonConfiguration configuration;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="JsonBodyDeserializer"/>,
+        /// with the provided <paramref name="environment"/>.
+        /// </summary>
+        /// <param name="environment">An <see cref="INancyEnvironment"/> instance.</param>
+        public JsonBodyDeserializer(INancyEnvironment environment)
+        {
+            this.configuration = environment.GetValue<JsonConfiguration>();
+        }
 
         /// <summary>
         /// Whether the deserializer can deserialize the content type
         /// </summary>
-        /// <param name="contentType">Content type to deserialize</param>
+        /// <param name="mediaRange">Content type to deserialize</param>
         /// <param name="context">Current <see cref="BindingContext"/>.</param>
         /// <returns>True if supported, false otherwise</returns>
-        public bool CanDeserialize(string contentType, BindingContext context)
+        public bool CanDeserialize(MediaRange mediaRange, BindingContext context)
         {
-            return Json.IsJsonContentType(contentType);
+            return Json.IsJsonContentType(mediaRange);
         }
 
         /// <summary>
         /// Deserialize the request body to a model
         /// </summary>
-        /// <param name="contentType">Content type to deserialize</param>
+        /// <param name="mediaRange">Content type to deserialize</param>
         /// <param name="bodyStream">Request body stream</param>
         /// <param name="context">Current context</param>
         /// <returns>Model instance</returns>
-        public object Deserialize(string contentType, Stream bodyStream, BindingContext context)
+        public object Deserialize(MediaRange mediaRange, Stream bodyStream, BindingContext context)
         {
-            var serializer = new JavaScriptSerializer(null, false, JsonSettings.MaxJsonLength, JsonSettings.MaxRecursions, JsonSettings.RetainCasing, JsonSettings.ISO8601DateFormat);
-            serializer.RegisterConverters(JsonSettings.Converters, JsonSettings.PrimitiveConverters);
+            var serializer = new JavaScriptSerializer(
+                null,
+                false,
+                this.configuration.MaxJsonLength,
+                this.configuration.MaxRecursions,
+                this.configuration.RetainCasing,
+                this.configuration.UseISO8601DateFormat,
+                this.configuration.Converters,
+                this.configuration.PrimitiveConverters);
+
+            serializer.RegisterConverters(this.configuration.Converters, this.configuration.PrimitiveConverters);
 
             bodyStream.Position = 0;
             string bodyText;
@@ -41,9 +63,9 @@ namespace Nancy.ModelBinding.DefaultBodyDeserializers
                 bodyText = bodyReader.ReadToEnd();
             }
 
-            var genericDeserializeMethod = this.deserializeMethod.MakeGenericMethod(new[] { context.DestinationType });
+            var genericDeserializeMethod = this.deserializeMethod.MakeGenericMethod(context.DestinationType);
 
-            var deserializedObject = genericDeserializeMethod.Invoke(serializer, new[] { bodyText });
+            var deserializedObject = genericDeserializeMethod.Invoke(serializer, new object[] { bodyText });
 
             return deserializedObject;
         }

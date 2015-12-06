@@ -3,17 +3,19 @@ namespace Nancy.Testing.Tests
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
-    using System.Linq;
     using Nancy.Extensions;
-    using Nancy.Tests;
     using Nancy.Helpers;
     using Nancy.Session;
+    using Nancy.Tests;
+
     using Xunit;
     using FakeItEasy;
     using Nancy.Authentication.Forms;
     using System.Collections.ObjectModel;
+    using Nancy.Configuration;
     using Xunit.Extensions;
 
     public class BrowserFixture
@@ -185,7 +187,7 @@ namespace Nancy.Testing.Tests
         public void Should_add_basic_authentication_credentials_to_the_headers_of_the_request()
         {
             // Given
-            var context = new BrowserContext();
+            var context = new BrowserContext(A.Fake<INancyEnvironment>());
 
             // When
             context.BasicAuth("username", "password");
@@ -204,7 +206,7 @@ namespace Nancy.Testing.Tests
         public void Should_add_cookies_to_the_request()
         {
             // Given
-            var context = new BrowserContext();
+            var context = new BrowserContext(A.Fake<INancyEnvironment>());
 
             var cookies =
                 new Dictionary<string, string>
@@ -229,7 +231,7 @@ namespace Nancy.Testing.Tests
         public void Should_add_cookie_to_the_request()
         {
             // Given
-            var context = new BrowserContext();
+            var context = new BrowserContext(A.Fake<INancyEnvironment>());
 
             var cookies =
                 new Dictionary<string, string>
@@ -433,7 +435,7 @@ namespace Nancy.Testing.Tests
 
             var cookie = response.Cookies.Single(c => c.Name == FormsAuthentication.FormsAuthenticationCookieName);
             var cookieValue = cookie.Value;
-            
+
             //Then
             cookieValue.ShouldEqual(cookieContents);
         }
@@ -532,7 +534,7 @@ namespace Nancy.Testing.Tests
             // When
             var result = browser.Get("/useragent", with =>
                 {
-                    with.Header("User-Agent", expectedHeaderValue);    
+                    with.Header("User-Agent", expectedHeaderValue);
                 });
 
             var header = result.Body.AsString();
@@ -632,7 +634,7 @@ namespace Nancy.Testing.Tests
 
                     foreach (var cookie in this.Request.Cookies)
                     {
-                        response.AddCookie(cookie.Key, cookie.Value);
+                        response.WithCookie(cookie.Key, cookie.Value);
                     }
 
                     return response;
@@ -665,7 +667,7 @@ namespace Nancy.Testing.Tests
                 Get["/type"] = _ => this.Request.Url.Scheme.ToLower();
 
                 Get["/ajax"] = _ => this.Request.IsAjaxRequest() ? "ajax" : "not-ajax";
- 
+
                 Post["/encoded"] = parameters => (string)this.Request.Form.name;
 
                 Post["/encodedquerystring"] = parameters => (string)this.Request.Query.name;

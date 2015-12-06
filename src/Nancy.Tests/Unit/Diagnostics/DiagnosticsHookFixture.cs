@@ -2,11 +2,15 @@
 {
     using System;
     using System.Linq;
+
+    using FakeItEasy.ExtensionSyntax;
+
     using Nancy.Cookies;
     using Nancy.Cryptography;
     using Nancy.Diagnostics;
     using Nancy.Helpers;
     using Nancy.Testing;
+
     using Xunit;
 
     public class DiagnosticsHookFixture
@@ -28,19 +32,23 @@
         public void Should_return_info_page_if_password_null()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = null, CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: null,
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Get(diagsConfig.Path);
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path);
 
             // Then
             Assert.True(result.Body.AsString().Contains("Diagnostics Disabled"));
@@ -50,19 +58,23 @@
         public void Should_return_info_page_if_password_empty()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = string.Empty, CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: string.Empty,
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Get(diagsConfig.Path);
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path);
 
             // Then
             Assert.True(result.Body.AsString().Contains("Diagnostics Disabled"));
@@ -73,19 +85,23 @@
         public void Should_return_login_page_with_no_auth_cookie()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Get(diagsConfig.Path);
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path);
 
             // Then
             result.Body["#login"].ShouldExistOnce();
@@ -95,19 +111,23 @@
         public void Should_return_main_page_with_valid_auth_cookie()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Get(diagsConfig.Path, with =>
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path, with =>
                 {
                     with.Cookie(DiagsCookieName, this.GetSessionCookieValue("password"));
                 });
@@ -120,19 +140,23 @@
         public void Should_return_login_page_with_expired_auth_cookie()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Get(diagsConfig.Path, with =>
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path, with =>
             {
                 with.Cookie(DiagsCookieName, this.GetSessionCookieValue("password", DateTime.Now.AddMinutes(-10)));
             });
@@ -145,19 +169,23 @@
         public void Should_return_login_page_with_auth_cookie_with_incorrect_password()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Get(diagsConfig.Path, with =>
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path, with =>
             {
                 with.Cookie(DiagsCookieName, this.GetSessionCookieValue("wrongPassword"));
             });
@@ -170,19 +198,23 @@
         public void Should_not_accept_invalid_password()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Post(diagsConfig.Path, with =>
+            var result = browser.Post(DiagnosticsConfiguration.Default.Path, with =>
             {
                 with.FormValue("Password", "wrongpassword");
             });
@@ -196,19 +228,23 @@
         public void Should_set_login_cookie_when_password_correct()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When
-            var result = browser.Post(diagsConfig.Path, with =>
+            var result = browser.Post(DiagnosticsConfiguration.Default.Path, with =>
             {
                 with.FormValue("Password", "password");
             });
@@ -222,12 +258,16 @@
         public void Should_use_rolling_expiry_for_auth_cookie()
         {
             // Given
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
@@ -235,7 +275,7 @@
             var expiryDate = DateTime.Now.AddMinutes(5);
 
             // When
-            var result = browser.Get(diagsConfig.Path, with =>
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path, with =>
             {
                 with.Cookie(DiagsCookieName, this.GetSessionCookieValue("password", expiryDate));
             });
@@ -250,19 +290,23 @@
         public void Should_return_diagnostic_example()
         {
             // Given no custom interactive diagnostic providers
-            var diagsConfig = new DiagnosticsConfiguration { Password = "password", CryptographyConfiguration = this.cryptoConfig };
-
             var bootstrapper = new ConfigurableBootstrapper(with =>
             {
+                with.Configure(env =>
+                {
+                    env.Diagnostics(
+                        password: "password",
+                        cryptographyConfiguration: this.cryptoConfig);
+                });
+
                 with.EnableAutoRegistration();
-                with.DiagnosticsConfiguration(diagsConfig);
                 with.Diagnostics<DefaultDiagnostics>();
             });
 
             var browser = new Browser(bootstrapper);
 
             // When querying the list of interactive providers
-            var result = browser.Get(diagsConfig.Path + "/interactive/providers/", with =>
+            var result = browser.Get(DiagnosticsConfiguration.Default.Path + "/interactive/providers/", with =>
                 {
                     with.Cookie(DiagsCookieName, this.GetSessionCookieValue("password"));
                 });

@@ -1,8 +1,10 @@
-﻿namespace Nancy.Tests.Unit
+namespace Nancy.Tests.Unit
 {
     using System;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
+
     using Xunit;
 
     public class AfterPipelineFixture
@@ -100,6 +102,37 @@
             Assert.True(item2Called);
             Assert.True(item3Called);
             Assert.True(item4Called);
+        }
+
+        [Fact]
+        public void Pipeline_containing_method_returning_null_throws_InvalidOperationException()
+        {
+            pipeline.AddItemToEndOfPipeline(ReturnNull);
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+            {
+                pipeline.Invoke(CreateContext(), new CancellationToken());
+            });
+
+            Assert.Equal("The after-pipeline action ReturnNull returned null; a Task was expected.", exception.Message);
+        }
+
+        [Fact]
+        public void Pipeline_containing_lambda_returning_null_throws_InvalidOperationException()
+        {
+            pipeline.AddItemToEndOfPipeline((context, ct) => null);
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+            {
+                pipeline.Invoke(CreateContext(), new CancellationToken());
+            });
+
+            Assert.Equal("An after-pipeline action must not return null; a Task was expected.", exception.Message);
+        }
+        
+        private static Task ReturnNull(NancyContext context, CancellationToken ct)
+        {
+            return null;
         }
     }
 }

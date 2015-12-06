@@ -5,22 +5,23 @@ namespace Nancy.Diagnostics
     using System.IO;
     using System.Linq;
     using System.Threading;
-
-    using Bootstrapper;
-    using Cookies;
-    using Cryptography;
-    using Helpers;
-    using ModelBinding;
-
+    using Nancy.Bootstrapper;
+    using Nancy.Configuration;
+    using Nancy.Cookies;
+    using Nancy.Cryptography;
+    using Nancy.Culture;
+    using Nancy.Json;
     using Nancy.Localization;
+    using Nancy.ModelBinding;
+    using Nancy.Responses;
+    using Nancy.Responses.Negotiation;
+    using Nancy.Routing;
     using Nancy.Routing.Constraints;
     using Nancy.Routing.Trie;
 
-    using Responses;
-    using Responses.Negotiation;
-    using Routing;
-    using Nancy.Culture;
-
+    /// <summary>
+    /// Pipeline hook to handle diagnostics dashboard requests.
+    /// </summary>
     public static class DiagnosticsHook
     {
         private static readonly CancellationToken CancellationToken = new CancellationToken();
@@ -29,22 +30,19 @@ namespace Nancy.Diagnostics
 
         internal const string ItemsKey = "DIAGS_REQUEST";
 
-        public static void Enable(
-            DiagnosticsConfiguration diagnosticsConfiguration,
-            IPipelines pipelines,
-            IEnumerable<IDiagnosticsProvider> providers,
-            IRootPathProvider rootPathProvider,
-            IRequestTracing requestTracing,
-            NancyInternalConfiguration configuration,
-            IModelBinderLocator modelBinderLocator,
-            IEnumerable<IResponseProcessor> responseProcessors,
-            IEnumerable<IRouteSegmentConstraint> routeSegmentConstraints,
-            ICultureService cultureService,
-            IRequestTraceFactory requestTraceFactory,
-            IEnumerable<IRouteMetadataProvider> routeMetadataProviders,
-            ITextResource textResource)
+        /// <summary>
+        /// Enables the diagnostics dashboard and will intercept all requests that are passed to
+        /// the condigured paths.
+        /// </summary>
+        public static void Enable(IPipelines pipelines, IEnumerable<IDiagnosticsProvider> providers, IRootPathProvider rootPathProvider, IRequestTracing requestTracing, NancyInternalConfiguration configuration, IModelBinderLocator modelBinderLocator, IEnumerable<IResponseProcessor> responseProcessors, IEnumerable<IRouteSegmentConstraint> routeSegmentConstraints, ICultureService cultureService, IRequestTraceFactory requestTraceFactory, IEnumerable<IRouteMetadataProvider> routeMetadataProviders, ITextResource textResource, INancyEnvironment environment)
         {
-            var diagnosticsModuleCatalog = new DiagnosticsModuleCatalog(providers, rootPathProvider, requestTracing, configuration, diagnosticsConfiguration);
+            var diagnosticsConfiguration =
+                environment.GetValue<DiagnosticsConfiguration>();
+
+            var diagnosticsEnvironment =
+                GetDiagnosticsEnvironment();
+
+            var diagnosticsModuleCatalog = new DiagnosticsModuleCatalog(providers, rootPathProvider, requestTracing, configuration, diagnosticsEnvironment);
 
             var diagnosticsRouteCache = new RouteCache(
                 diagnosticsModuleCatalog,
@@ -56,7 +54,7 @@ namespace Nancy.Diagnostics
 
             var diagnosticsRouteResolver = new DefaultRouteResolver(
                 diagnosticsModuleCatalog,
-                new DiagnosticsModuleBuilder(rootPathProvider, modelBinderLocator),
+                new DiagnosticsModuleBuilder(rootPathProvider, modelBinderLocator, diagnosticsEnvironment, environment),
                 diagnosticsRouteCache,
                 new RouteResolverTrie(new TrieNodeFactory(routeSegmentConstraints)));
 
@@ -100,10 +98,33 @@ namespace Nancy.Diagnostics
 
                         RewriteDiagnosticsUrl(diagnosticsConfiguration, ctx);
 
-                        return diagnosticsConfiguration.Valid
+                        return ValidateConfiguration(diagnosticsConfiguration)
                                    ? ExecuteDiagnostics(ctx, diagnosticsRouteResolver, diagnosticsConfiguration, serializer)
                                    : GetDiagnosticsHelpView(ctx);
                     }));
+        }
+
+        /// <summary>
+        /// Gets a special <see cref="INancyEnvironment"/> instance that is separate from the
+        /// one used by the application.
+        /// </summary>
+        /// <returns></returns>
+        private static INancyEnvironment GetDiagnosticsEnvironment()
+        {
+            var diagnosticsEnvironment =
+                new DefaultNancyEnvironment();
+
+            diagnosticsEnvironment.Json(retainCasing: false);
+
+            return diagnosticsEnvironment;
+        }
+
+        private static bool ValidateConfiguration(DiagnosticsConfiguration configuration)
+        {
+            return !string.IsNullOrWhiteSpace(configuration.Password) &&
+                !string.IsNullOrWhiteSpace(configuration.CookieName) &&
+                !string.IsNullOrWhiteSpace(configuration.Path) &&
+                configuration.SlidingTimeout != 0;
         }
 
         public static void Disable(IPipelines pipelines)
@@ -133,7 +154,7 @@ namespace Nancy.Diagnostics
             {
                 var view = GetDiagnosticsLoginView(ctx);
 
-                view.AddCookie(
+                view.WithCookie(
                     new NancyCookie(diagnosticsConfiguration.CookieName, String.Empty, true) { Expires = DateTime.Now.AddDays(-1) });
 
                 return view;
@@ -152,7 +173,7 @@ namespace Nancy.Diagnostics
                 ctx.Response = task.Result;
             }
 
-            if (ctx.Request.Method.ToUpperInvariant() == "HEAD")
+            if (ctx.Request.Method.Equals("HEAD", StringComparison.OrdinalIgnoreCase))
             {
                 ctx.Response = new HeadResponse(ctx.Response);
             }
@@ -183,7 +204,7 @@ namespace Nancy.Diagnostics
 
             var cookie = new NancyCookie(diagnosticsConfiguration.CookieName, String.Format("{1}{0}", encryptedSession, hmacString), true);
 
-            context.Response.AddCookie(cookie);
+            context.Response.WithCookie(cookie);
         }
 
         private static DiagnosticsSession GetSession(NancyContext context, DiagnosticsConfiguration diagnosticsConfiguration, DefaultObjectSerializer serializer)
@@ -258,7 +279,7 @@ namespace Nancy.Diagnostics
 
         private static bool IsLoginRequest(NancyContext context, DiagnosticsConfiguration diagnosticsConfiguration)
         {
-            return context.Request.Method == "POST" &&
+            return context.Request.Method.Equals("POST", StringComparison.OrdinalIgnoreCase) &&
                 context.Request.Url.BasePath.TrimEnd(new[] { '/' }).EndsWith(diagnosticsConfiguration.Path) &&
                 context.Request.Url.Path == "/";
         }

@@ -4,8 +4,8 @@ namespace Nancy.ErrorHandling
     using System.IO;
     using System.Linq;
     using System.Text;
-    using IO;
     using Nancy.Extensions;
+    using Nancy.IO;
     using Nancy.Responses.Negotiation;
     using Nancy.ViewEngines;
 
@@ -71,6 +71,10 @@ namespace Nancy.ErrorHandling
                 return;
             }
 
+            // Reset negotiation context to avoid any downstream cast exceptions 
+            // from swapping a view model with a `DefaultStatusCodeHandlerResult`
+            context.NegotiationContext = new NegotiationContext();
+
             var result = new DefaultStatusCodeHandlerResult(statusCode, this.errorMessages[statusCode], StaticConfiguration.DisableErrorTraces ? DisableErrorTracesTrueMessage : context.GetExceptionDetails());
             try
             {
@@ -99,8 +103,8 @@ namespace Nancy.ErrorHandling
             if (!string.IsNullOrEmpty(contents))
             {
                 contents = contents.Replace("[DETAILS]", result.Details);
-            }   
-                
+            }
+
             context.Response.ContentType = "text/html";
             context.Response.Contents = s =>
             {
@@ -141,5 +145,5 @@ namespace Nancy.ErrorHandling
 
             public string Details { get; private set; }
         }
-    }    
+    }
 }

@@ -58,7 +58,7 @@
         /// <returns>An <see cref="IEnumerable{T}"/> of <see cref="ModelValidationRule"/> instances.</returns>
         public virtual IEnumerable<ModelValidationError> Validate(object instance, ValidationAttribute attribute, PropertyDescriptor descriptor, NancyContext context)
         {
-            var validationContext = 
+            var validationContext =
                 new ValidationContext(instance, null, null)
                 {
                     MemberName = descriptor == null ? null : descriptor.Name
@@ -85,7 +85,7 @@
                 instance = descriptor.GetValue(instance);
             }
 
-            var result = 
+            var result =
                 attribute.GetValidationResult(instance, validationContext);
 
             if (result != null)

@@ -6,9 +6,7 @@ namespace Nancy.Routing
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-
-    using Nancy.Helpers;
-
+    using Helpers;
     using Responses.Negotiation;
 
     /// <summary>
@@ -70,7 +68,7 @@ namespace Nancy.Routing
                                     {
                                         context.Response = completedRouteTask.Result;
 
-                                        if (context.Request.Method.ToUpperInvariant() == "HEAD")
+                                        if (context.Request.Method.Equals("HEAD", StringComparison.OrdinalIgnoreCase))
                                         {
                                             context.Response = new HeadResponse(context.Response);
                                         }

@@ -1,7 +1,8 @@
-﻿namespace Nancy
+namespace Nancy
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -82,6 +83,18 @@
             while (true)
             {
                 var current = enumerator.Current.Invoke(context, cancellationToken);
+
+                if (current == null)
+                {
+                    if (enumerator.Current.Method != null && !new[] { '<', '>' }.Any(enumerator.Current.Method.Name.Contains))
+                    {
+                        throw new InvalidOperationException(
+                            string.Format("The after-pipeline action {0} returned null; a Task was expected.",
+                                          enumerator.Current.Method.Name));
+                    }
+
+                    throw new InvalidOperationException("An after-pipeline action must not return null; a Task was expected.");
+                }
 
                 if (current.Status == TaskStatus.Created)
                 {

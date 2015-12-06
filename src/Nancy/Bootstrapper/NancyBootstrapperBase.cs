@@ -4,12 +4,14 @@
     using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
-    using Diagnostics;
-    using Nancy.Cryptography;
-    using Nancy.ModelBinding;
+
+    using Nancy.Configuration;
     using Nancy.Conventions;
-    using Nancy.ViewEngines;
+    using Nancy.Cryptography;
+    using Nancy.Diagnostics;
+    using Nancy.ModelBinding;
     using Nancy.Validation;
+    using Nancy.ViewEngines;
 
     /// <summary>
     /// Nancy bootstrapper base class
@@ -216,14 +218,6 @@
         }
 
         /// <summary>
-        /// Gets the diagnostics / dashboard configuration (password etc)
-        /// </summary>
-        protected virtual DiagnosticsConfiguration DiagnosticsConfiguration
-        {
-            get { return new DiagnosticsConfiguration(); }
-        }
-
-        /// <summary>
         /// Initialise the bootstrapper. Must be called prior to GetEngine.
         /// </summary>
         public void Initialise()
@@ -247,11 +241,13 @@
             // We need to call this to fix an issue with assemblies that are referenced by DI not being loaded
             AppDomainAssemblyTypeScanner.UpdateTypes();
 
-            var typeRegistrations = this.InternalConfiguration.GetTypeRegistations()
-                                        .Concat(this.GetAdditionalTypes());
+            var typeRegistrations = this.InternalConfiguration
+                .GetTypeRegistrations()
+                .Concat(this.GetAdditionalTypes());
 
-            var collectionTypeRegistrations = this.InternalConfiguration.GetCollectionTypeRegistrations()
-                                                  .Concat(this.GetApplicationCollections());
+            var collectionTypeRegistrations = this.InternalConfiguration
+                .GetCollectionTypeRegistrations()
+                .Concat(this.GetApplicationCollections());
 
             // TODO - should this be after initialiseinternal?
             this.ConfigureConventions(this.Conventions);
@@ -266,14 +262,19 @@
 
             this.RegisterTypes(this.ApplicationContainer, typeRegistrations);
             this.RegisterCollectionTypes(this.ApplicationContainer, collectionTypeRegistrations);
+            this.RegisterModules(this.ApplicationContainer, this.Modules);
             this.RegisterInstances(this.ApplicationContainer, instanceRegistrations);
             this.RegisterRegistrationTasks(this.GetRegistrationTasks());
-            this.RegisterModules(this.ApplicationContainer, this.Modules);
 
-            foreach (var applicationStartupTask in this.GetApplicationStartupTasks().ToList())
-            {
-                applicationStartupTask.Initialize(this.ApplicationPipelines);
-            }
+            var environment = this.GetEnvironmentConfigurator().ConfigureEnvironment(this.Configure);
+            this.RegisterNancyEnvironment(this.ApplicationContainer, environment);
+
+        foreach (var applicationStartupTask in this.GetApplicationStartupTasks().ToList())
+        {
+            applicationStartupTask.Initialize(this.ApplicationPipelines);
+        }
+
+        this.RegisterModules(this.ApplicationContainer, this.Modules);
 
             this.ApplicationStartup(this.ApplicationContainer, this.ApplicationPipelines);
 
@@ -288,7 +289,7 @@
                             return null;
                         }
 
-                        if (String.Equals(ctx.Request.Path, "/favicon.ico", StringComparison.OrdinalIgnoreCase))
+                        if (String.Equals(ctx.Request.Path, "/favicon.ico", StringComparison.InvariantCultureIgnoreCase))
                         {
                             var response = new Response
                                 {
@@ -310,6 +311,20 @@
 
             this.initialised = true;
         }
+
+        /// <summary>
+        /// Configures the Nancy environment
+        /// </summary>
+        /// <param name="environment">The <see cref="INancyEnvironment"/> instance to configure</param>
+        public virtual void Configure(INancyEnvironment environment)
+        {
+        }
+
+        /// <summary>
+        /// Gets the <see cref="INancyEnvironmentConfigurator"/> used by th.
+        /// </summary>
+        /// <returns>An <see cref="INancyEnvironmentConfigurator"/> instance.</returns>
+        protected abstract INancyEnvironmentConfigurator GetEnvironmentConfigurator();
 
         /// <summary>
         /// Gets the diagnostics for initialisation
@@ -371,6 +386,13 @@
         }
 
         /// <summary>
+        /// Get the <see cref="INancyEnvironment"/> instance.
+        /// </summary>
+        /// <returns>An configured <see cref="INancyEnvironment"/> instance.</returns>
+        /// <remarks>The boostrapper must be initialised (<see cref="INancyBootstrapper.Initialise"/>) prior to calling this.</remarks>
+        public abstract INancyEnvironment GetEnvironment();
+
+        /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         /// <filterpriority>2</filterpriority>
@@ -392,18 +414,19 @@
 
             var container = this.ApplicationContainer as IDisposable;
 
-            if (container == null)
+            if (container != null)
             {
-                return;
+                try
+                {
+                    container.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                }
             }
 
-            try
-            {
-                container.Dispose();
-            }
-            catch (ObjectDisposedException)
-            {
-            }
+
+            Dispose(true);
         }
 
         /// <summary>
@@ -496,6 +519,14 @@
         protected virtual void ConfigureConventions(NancyConventions nancyConventions)
         {
         }
+        
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+        }
 
         /// <summary>
         /// Resolve INancyEngine
@@ -508,6 +539,13 @@
         /// </summary>
         /// <returns>Container instance</returns>
         protected abstract TContainer GetApplicationContainer();
+
+        /// <summary>
+        /// Registers an <see cref="INancyEnvironment"/> instance in the container.
+        /// </summary>
+        /// <param name="container">The container to register into.</param>
+        /// <param name="environment">The <see cref="INancyEnvironment"/> instance to register.</param>
+        protected abstract void RegisterNancyEnvironment(TContainer container, INancyEnvironment environment);
 
         /// <summary>
         /// Register the bootstrapper's implemented types into the container.
@@ -568,7 +606,6 @@
             return new[] {
                 new InstanceRegistration(typeof(CryptographyConfiguration), this.CryptographyConfiguration),
                 new InstanceRegistration(typeof(NancyInternalConfiguration), this.InternalConfiguration),
-                new InstanceRegistration(typeof(DiagnosticsConfiguration), this.DiagnosticsConfiguration),
                 new InstanceRegistration(typeof(IRootPathProvider), this.RootPathProvider),
             };
         }

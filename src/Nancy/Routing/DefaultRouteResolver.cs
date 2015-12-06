@@ -3,11 +3,8 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Nancy;
-    using Nancy.Helpers;
+    using Helpers;
     using Trie;
-
-    using MatchResult = Trie.MatchResult;
 
     /// <summary>
     /// Default implementation of the <see cref="IRouteResolver"/> interface.
@@ -95,7 +92,7 @@
 
         private static bool IsOptionsRequest(NancyContext context)
         {
-            return context.Request.Method.Equals("OPTIONS", StringComparison.Ordinal);
+            return context.Request.Method.Equals("OPTIONS", StringComparison.OrdinalIgnoreCase);
         }
 
         private void BuildTrie()
@@ -165,7 +162,7 @@
 
             if (!StaticConfiguration.EnableHeadRouting)
             {
-                return requestedMethod.Equals("HEAD", StringComparison.Ordinal) ?
+                return requestedMethod.Equals("HEAD", StringComparison.OrdinalIgnoreCase) ?
                     "GET" :
                     requestedMethod;
             }
