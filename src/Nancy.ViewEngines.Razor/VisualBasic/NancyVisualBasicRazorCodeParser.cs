@@ -13,20 +13,22 @@
     /// </summary>
     public class NancyVisualBasicRazorCodeParser : VBCodeParser
     {
+        private readonly IAssemblyCatalog assemblyCatalog;
         internal const string ModelTypeKeyword = "ModelType";
-
         private bool modelStatementFound;
         private SourceLocation? endInheritsLocation;
-        private VisualBasicClrTypeResolver clrTypeResolver;
+        private readonly VisualBasicClrTypeResolver clrTypeResolver;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NancyVisualBasicRazorCodeParser"/> class.
         /// </summary>
-        public NancyVisualBasicRazorCodeParser()
+        /// <param name="assemblyCatalog">An <see cref="IAssemblyCatalog"/> instance.</param>
+        public NancyVisualBasicRazorCodeParser(IAssemblyCatalog assemblyCatalog)
         {
-            MapDirective(ModelTypeKeyword, ModelTypeDirective);
+            this.assemblyCatalog = assemblyCatalog;
+            this.MapDirective(ModelTypeKeyword, this.ModelTypeDirective);
 
-            this.clrTypeResolver = new VisualBasicClrTypeResolver();
+            this.clrTypeResolver = new VisualBasicClrTypeResolver(assemblyCatalog);
         }
 
         protected virtual bool ModelTypeDirective()
@@ -37,11 +39,11 @@
             this.Context.CurrentBlock.Type = BlockType.Directive;
             this.AcceptAndMoveNext();
 
-            var endModelLocation = CurrentLocation;
+            var endModelLocation = this.CurrentLocation;
 
-            if (At(VBSymbolType.WhiteSpace))
+            if (this.At(VBSymbolType.WhiteSpace))
             {
-                Span.EditHandler.AcceptedCharacters = AcceptedCharacters.None;
+                this.Span.EditHandler.AcceptedCharacters = AcceptedCharacters.None;
             }
 
             this.AcceptWhile(VBSymbolType.WhiteSpace);
@@ -53,32 +55,32 @@
             }
             this.modelStatementFound = true;
 
-            if (this.EndOfFile || At(VBSymbolType.WhiteSpace) || At(VBSymbolType.NewLine))
+            if (this.EndOfFile || this.At(VBSymbolType.WhiteSpace) || this.At(VBSymbolType.NewLine))
             {
                 this.Context.OnError(endModelLocation, "The 'model' keyword must be followed by a type name on the same line.", ModelTypeKeyword);
             }
 
-            AcceptUntil(VBSymbolType.NewLine);
-            if (!Context.DesignTimeMode)
+            this.AcceptUntil(VBSymbolType.NewLine);
+            if (!this.Context.DesignTimeMode)
             {
                 this.Optional(VBSymbolType.NewLine);
             }
 
-            var baseType = string.Concat(Span.Symbols.Select(s => s.Content)).Trim();
+            var baseType = string.Concat(this.Span.Symbols.Select(s => s.Content)).Trim();
 
-            var modelType = this.clrTypeResolver.Resolve(this.Language.TokenizeString(baseType).ToList());           
+            var modelType = this.clrTypeResolver.Resolve(this.Language.TokenizeString(baseType).ToList());
 
             if (modelType == null)
             {
-                CodeParserHelper.ThrowTypeNotFound(baseType);
+                CodeParserHelper.ThrowTypeNotFound(this.assemblyCatalog, baseType);
             }
 
             this.Span.CodeGenerator = new ModelCodeGenerator(modelType, modelType.FullName);
 
             this.CheckForInheritsAndModelStatements();
-            
+
             this.Output(SpanKind.Code);
-            
+
             return false;
         }
 

@@ -28,6 +28,8 @@
         private readonly IEnumerable<IRouteMetadataProvider> routeMetadataProviders;
         private readonly ITextResource textResource;
         private readonly INancyEnvironment environment;
+        private readonly IRuntimeEnvironmentInformation runtimeEnvironmentInformation;
+        private readonly ITypeCatalog typeCatalog;
 
         /// <summary>
         /// Creates a new instance of the <see cref="DefaultDiagnostics"/> class.
@@ -43,6 +45,9 @@
         /// <param name="requestTraceFactory"></param>
         /// <param name="routeMetadataProviders"></param>
         /// <param name="textResource"></param>
+        /// <param name="environment"></param>
+        /// <param name="runtimeEnvironmentInformation"></param>
+        /// <param name="typeCatalog"></param>
         public DefaultDiagnostics(
             IEnumerable<IDiagnosticsProvider> diagnosticProviders,
             IRootPathProvider rootPathProvider,
@@ -55,7 +60,9 @@
             IRequestTraceFactory requestTraceFactory,
             IEnumerable<IRouteMetadataProvider> routeMetadataProviders,
             ITextResource textResource,
-            INancyEnvironment environment)
+            INancyEnvironment environment,
+            IRuntimeEnvironmentInformation runtimeEnvironmentInformation,
+            ITypeCatalog typeCatalog)
         {
             this.diagnosticProviders = diagnosticProviders;
             this.rootPathProvider = rootPathProvider;
@@ -69,6 +76,8 @@
             this.routeMetadataProviders = routeMetadataProviders;
             this.textResource = textResource;
             this.environment = environment;
+            this.runtimeEnvironmentInformation = runtimeEnvironmentInformation;
+            this.typeCatalog = typeCatalog;
         }
 
         /// <summary>
@@ -90,7 +99,9 @@
                 this.requestTraceFactory,
                 this.routeMetadataProviders,
                 this.textResource,
-                this.environment);
+                this.environment,
+                this.runtimeEnvironmentInformation,
+                this.typeCatalog);
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Nancy
     using System.ComponentModel;
     using System.Threading;
     using System.Threading.Tasks;
-
+    using Nancy.Configuration;
     using Nancy.ModelBinding;
     using Nancy.Responses.Negotiation;
     using Nancy.Routing;
@@ -82,15 +82,7 @@ namespace Nancy
         /// <value>A <see cref="RouteBuilder"/> instance.</value>
         public RouteBuilder Head
         {
-            get
-            {
-                if (!StaticConfiguration.EnableHeadRouting)
-                {
-                    throw new InvalidOperationException("Explicit HEAD routing is disabled. Set StaticConfiguration.EnableHeadRouting to enable.");
-                }
-
-                return new RouteBuilder("HEAD", this);
-            }
+            get { return new RouteBuilder("HEAD", this); }
         }
 
         /// <summary>
@@ -290,27 +282,9 @@ namespace Nancy
             }
 
             /// <summary>
-            /// Defines a Nancy route for the specified <paramref name="path"/>.
-            /// </summary>
-            /// <value>A delegate that is used to invoke the route.</value>
-            public Func<dynamic, dynamic> this[string path]
-            {
-                set { this.AddRoute(string.Empty, path, null, value); }
-            }
-
-            /// <summary>
-            /// Defines a Nancy route for the specified <paramref name="path"/> and <paramref name="condition"/>.
-            /// </summary>
-            /// <value>A delegate that is used to invoke the route.</value>
-            public Func<dynamic, dynamic> this[string path, Func<NancyContext, bool> condition]
-            {
-                set { this.AddRoute(string.Empty, path, condition, value); }
-            }
-
-            /// <summary>
             /// Defines an async route for the specified <paramref name="path"/>
             /// </summary>
-            public Func<dynamic, CancellationToken, Task<dynamic>> this[string path, bool runAsync]
+            public Func<dynamic, CancellationToken, Task<dynamic>> this[string path]
             {
                 set { this.AddRoute(string.Empty, path, null, value); }
             }
@@ -318,33 +292,15 @@ namespace Nancy
             /// <summary>
             /// Defines an async route for the specified <paramref name="path"/> and <paramref name="condition"/>.
             /// </summary>
-            public Func<dynamic, CancellationToken, Task<dynamic>> this[string path, Func<NancyContext, bool> condition, bool runAsync]
+            public Func<dynamic, CancellationToken, Task<dynamic>> this[string path, Func<NancyContext, bool> condition]
             {
                 set { this.AddRoute(string.Empty, path, condition, value); }
             }
 
             /// <summary>
-            /// Defines a Nancy route for the specified <paramref name="path"/> and <paramref name="name"/>
-            /// </summary>
-            /// <value>A delegate that is used to invoke the route.</value>
-            public Func<dynamic, dynamic> this[string name, string path]
-            {
-                set { this.AddRoute(name, path, null, value); }
-            }
-
-            /// <summary>
-            /// Defines a Nancy route for the specified <paramref name="path"/>, <paramref name="condition"/> and <paramref name="name"/>
-            /// </summary>
-            /// <value>A delegate that is used to invoke the route.</value>
-            public Func<dynamic, dynamic> this[string name, string path, Func<NancyContext, bool> condition]
-            {
-                set { this.AddRoute(name, path, condition, value); }
-            }
-
-            /// <summary>
             /// Defines an async route for the specified <paramref name="path"/> and <paramref name="name"/>
             /// </summary>
-            public Func<dynamic, CancellationToken, Task<dynamic>> this[string name, string path, bool runAsync]
+            public Func<dynamic, CancellationToken, Task<dynamic>> this[string name, string path]
             {
                 set { this.AddRoute(name, path, null, value); }
             }
@@ -352,16 +308,9 @@ namespace Nancy
             /// <summary>
             /// Defines an async route for the specified <paramref name="path"/>, <paramref name="condition"/> and <paramref name="name"/>
             /// </summary>
-            public Func<dynamic, CancellationToken, Task<dynamic>> this[string name, string path, Func<NancyContext, bool> condition, bool runAsync]
+            public Func<dynamic, CancellationToken, Task<dynamic>> this[string name, string path, Func<NancyContext, bool> condition]
             {
                 set { this.AddRoute(name, path, condition, value); }
-            }
-
-            protected void AddRoute(string name, string path, Func<NancyContext, bool> condition, Func<dynamic, dynamic> value)
-            {
-                var fullPath = GetFullPath(path);
-
-                this.parentModule.routes.Add(Route.FromSync(name, this.method, fullPath, condition, value));
             }
 
             protected void AddRoute(string name, string path, Func<NancyContext, bool> condition, Func<dynamic, CancellationToken, Task<dynamic>> value)

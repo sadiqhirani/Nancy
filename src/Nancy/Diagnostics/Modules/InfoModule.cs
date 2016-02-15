@@ -6,27 +6,33 @@
     using System.Dynamic;
     using System.Linq;
     using System.Reflection;
-
     using Nancy.Bootstrapper;
+    using Nancy.Configuration;
     using Nancy.ViewEngines;
 
     public class InfoModule : DiagnosticModule
     {
-        public InfoModule(IRootPathProvider rootPathProvider, NancyInternalConfiguration configuration)
+        private readonly ITypeCatalog typeCatalog;
+
+        public InfoModule(IRootPathProvider rootPathProvider, NancyInternalConfiguration configuration, INancyEnvironment environment, ITypeCatalog typeCatalog)
             : base("/info")
         {
-            Get["/"] = _ =>
+            this.typeCatalog = typeCatalog;
+
+            Get["/"] = async (_, __) =>
             {
                 return View["Info"];
             };
 
-            Get["/data"] = _ =>
+            Get["/data"] = async (_, __) =>
             {
                 dynamic data = new ExpandoObject();
 
+
+
                 data.Nancy = new ExpandoObject();
                 data.Nancy.Version = string.Format("v{0}", this.GetType().Assembly.GetName().Version.ToString());
-                data.Nancy.TracesDisabled = StaticConfiguration.DisableErrorTraces;
+                data.Nancy.TracesDisabled = !environment.GetValue<TraceConfiguration>().DisplayErrorTraces;
                 data.Nancy.CaseSensitivity = StaticConfiguration.CaseSensitive ? "Sensitive" : "Insensitive";
                 data.Nancy.RootPath = rootPathProvider.GetRootPath();
                 data.Nancy.Hosting = GetHosting();
@@ -42,17 +48,16 @@
 
                     data.Configuration[propertyInfo.Name] = (!typeof(IEnumerable).IsAssignableFrom(value.GetType())) ?
                         new[] { value.ToString() } :
-                        ((IEnumerable<object>) value).Select(x => x.ToString());
+                        ((IEnumerable<object>)value).Select(x => x.ToString());
                 }
 
                 return this.Response.AsJson((object)data);
             };
         }
 
-        private static string[] GetViewEngines()
+        private string[] GetViewEngines()
         {
-            var engines =
-                AppDomainAssemblyTypeScanner.TypesOf<IViewEngine>();
+            var engines = this.typeCatalog.GetTypesAssignableTo<IViewEngine>();
 
             return engines
                 .Select(engine => engine.Name.Split(new [] { "ViewEngine" }, StringSplitOptions.None)[0])
