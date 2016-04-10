@@ -104,18 +104,6 @@
     <Compile Include="..\Nancy\AppDomainAssemblyCatalog.cs">
       <Link>AppDomainAssemblyCatalog.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy\AssemblyCatalogBase.cs">
-      <Link>AssemblyCatalogBase.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\AssemblyCatalogExtensions.cs">
-      <Link>AssemblyCatalogExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\AssemblyResolveStrategies.cs">
-      <Link>AssemblyResolveStrategies.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\AssemblyResolveStrategy.cs">
-      <Link>AssemblyResolveStrategy.cs</Link>
-    </Compile>
     <Compile Include="..\Nancy\AsyncNamedPipelineBase.cs">
       <Link>AsyncNamedPipelineBase.cs</Link>
     </Compile>
@@ -247,6 +235,9 @@
     </Compile>
     <Compile Include="..\Nancy\DefaultRootPathProvider.cs">
       <Link>DefaultRootPathProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\ArrayCache.cs">
+      <Link>ArrayCache.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\DefaultRouteConfigurationProvider.cs">
       <Link>DefaultRouteConfigurationProvider.cs</Link>
@@ -382,6 +373,12 @@
     </Compile>
     <Compile Include="..\Nancy\ITypeCatalog.cs">
       <Link>ITypeCatalog.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\Json\Simple\NancySerializationStrategy.cs">
+      <Link>Json\Simple\NancySerializationStrategy.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\Json\Simple\SimpleJson.cs">
+      <Link>Json\Simple\SimpleJson.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\Properties\InternalsVisibleTo.cs">
       <Link>Properties\InternalsVisibleTo.cs</Link>
@@ -1037,17 +1034,8 @@
     <Compile Include="..\Nancy\Json\JavaScriptSerializer.cs">
       <Link>Json\JavaScriptSerializer.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy\Json\JavaScriptTypeResolver.cs">
-      <Link>Json\JavaScriptTypeResolver.cs</Link>
-    </Compile>
     <Compile Include="..\Nancy\Json\Json.cs">
       <Link>Json\Json.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\Json\JsonDeserializer.cs">
-      <Link>Json\JsonDeserializer.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\Json\JsonSerializer.cs">
-      <Link>Json\JsonSerializer.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\Helpers\ReflectionUtils.cs">
       <Link>Helpers\ReflectionUtils.cs</Link>
@@ -1373,6 +1361,9 @@
     <Compile Include="..\Nancy\GlobalizationConfiguration.cs" />
     <Compile Include="..\Nancy\GlobalizationConfigurationExtensions.cs" />
     <Compile Include="..\Nancy\DefaultGlobalizationConfigurationProvider.cs" />
+    <Compile Include="..\Nancy\Configuration\ConfigurationException.cs">
+      <Link>Configuration\ConfigurationException.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="..\Nancy\Diagnostics\Views\Dashboard.sshtml">
@@ -1532,7 +1523,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

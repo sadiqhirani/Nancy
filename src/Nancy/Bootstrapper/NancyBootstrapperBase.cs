@@ -89,7 +89,15 @@
         /// <value>An <see cref="IAssemblyCatalog"/> instance.</value>
         protected virtual IAssemblyCatalog AssemblyCatalog
         {
-            get { return this.assemblyCatalog ?? (this.assemblyCatalog = new AppDomainAssemblyCatalog()); }
+            get {
+                return this.assemblyCatalog ?? (
+#if !DNX
+                    this.assemblyCatalog = new AppDomainAssemblyCatalog()
+#else
+                    this.assemblyCatalog = new LibraryManagerAssemblyCatalog()
+#endif
+                );
+            }
         }
 
         /// <summary>
@@ -294,7 +302,7 @@
             {
                 this.ApplicationPipelines.BeforeRequest.AddItemToStartOfPipeline(ctx =>
                     {
-                        if (ctx.Request == null || String.IsNullOrEmpty(ctx.Request.Path))
+                        if (ctx.Request == null || string.IsNullOrEmpty(ctx.Request.Path))
                         {
                             return null;
                         }

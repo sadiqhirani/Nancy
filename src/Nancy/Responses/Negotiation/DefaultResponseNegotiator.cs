@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Text;
 
     using Nancy.Conventions;
@@ -75,18 +76,41 @@
         /// <returns><c>true</c> if the result is a <see cref="Response"/>, <c>false</c> otherwise.</returns>
         private static bool TryCastResultToResponse(dynamic routeResult, out Response response)
         {
-            // This code has to be designed this way in order for the cast operator overloads
-            // to be called in the correct way. It cannot be replaced by the as-operator.
-            try
+            var targetType = routeResult.GetType();
+            var responseType = typeof(Response);
+
+            var methods = responseType.GetMethods(BindingFlags.Public | BindingFlags.Static);
+
+            foreach (var method in methods)
             {
-                response = (Response) routeResult;
+                if (!method.Name.Equals("op_Implicit", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (method.ReturnType != responseType)
+                {
+                    continue;
+                }
+
+                var parameters = method.GetParameters();
+
+                if (parameters.Length != 1)
+                {
+                    continue;
+                }
+
+                if (parameters[0].ParameterType != targetType)
+                {
+                    continue;
+                }
+
+                response = (Response)routeResult;
                 return true;
             }
-            catch
-            {
-                response = null;
-                return false;
-            }
+
+            response = null;
+            return false;
         }
 
         /// <summary>
@@ -209,10 +233,9 @@
         /// <param name="negotiationContext">The negotiation context.</param>
         /// <param name="context">The context.</param>
         /// <returns>A <see cref="Response"/>.</returns>
-        private static Response CreateResponse(
-            IList<CompatibleHeader> compatibleHeaders,
-            NegotiationContext negotiationContext,
-            NancyContext context)
+        private Response CreateResponse(IList<CompatibleHeader> compatibleHeaders,
+                                        NegotiationContext negotiationContext,
+                                        NancyContext context)
         {
             var response = NegotiateResponse(compatibleHeaders, negotiationContext, context);
 
@@ -226,7 +249,7 @@
 
             response.WithHeader("Vary", "Accept");
 
-            AddLinkHeader(compatibleHeaders, response, context.Request.Url);
+            this.AddLinkHeader(compatibleHeaders, response, context.Request.Url);
             SetStatusCode(negotiationContext, response);
             SetReasonPhrase(negotiationContext, response);
             AddCookies(negotiationContext, response);
@@ -286,15 +309,14 @@
         /// <param name="compatibleHeaders">The compatible headers.</param>
         /// <param name="response">The response.</param>
         /// <param name="requestUrl">The request URL.</param>
-        private static void AddLinkHeader(
-            IEnumerable<CompatibleHeader> compatibleHeaders,
-            Response response,
-            Url requestUrl)
+        private void AddLinkHeader(IEnumerable<CompatibleHeader> compatibleHeaders, Response response, Url requestUrl)
         {
             var linkProcessors = GetLinkProcessors(compatibleHeaders, response.ContentType);
             if (linkProcessors.Any())
             {
-                response.Headers["Link"] = CreateLinkHeader(requestUrl, linkProcessors);
+                string existingLinkHeader;
+                response.Headers.TryGetValue("Link", out existingLinkHeader);
+                response.Headers["Link"] = this.CreateLinkHeader(requestUrl, linkProcessors, existingLinkHeader);
             }
         }
 
@@ -328,16 +350,22 @@
         /// </summary>
         /// <param name="requestUrl">The request URL.</param>
         /// <param name="linkProcessors">The link processors.</param>
+        /// <param name="existingLinkHeader">The existing Link HTTP Header.</param>
         /// <returns>The link header.</returns>
-        private static string CreateLinkHeader(Url requestUrl, IEnumerable<KeyValuePair<string, MediaRange>> linkProcessors)
+        protected virtual string CreateLinkHeader(Url requestUrl, IEnumerable<KeyValuePair<string, MediaRange>> linkProcessors, string existingLinkHeader)
         {
             var fileName = Path.GetFileNameWithoutExtension(requestUrl.Path);
             var baseUrl = string.Concat(requestUrl.BasePath, "/", fileName);
 
             var links = linkProcessors
-                .Select(lp => string.Format("<{0}.{1}>; rel=\"{2}\"", baseUrl, lp.Key, lp.Value));
+                .Select(lp => string.Format("<{0}.{1}>; rel=\"alternate\"; type=\"{2}\"", baseUrl, lp.Key, lp.Value));
 
-            return string.Join(",", links);
+            if (!string.IsNullOrEmpty(existingLinkHeader))
+            {
+                links = links.Concat(new[] { existingLinkHeader });
+            }
+
+            return string.Join(", ", links);
         }
 
         /// <summary>

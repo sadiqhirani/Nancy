@@ -6,17 +6,17 @@ namespace Nancy.Testing.Tests
     using System.Linq;
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
+    using System.Collections.ObjectModel;
+    using System.Threading.Tasks;
     using Nancy.Extensions;
     using Nancy.Helpers;
     using Nancy.Session;
     using Nancy.Tests;
-    using Xunit;
-    using FakeItEasy;
     using Nancy.Authentication.Forms;
-    using System.Collections.ObjectModel;
-    using System.Threading.Tasks;
     using Nancy.Configuration;
     using Nancy.Tests.xUnitExtensions;
+    using Xunit;
+    using FakeItEasy;
 
     public class BrowserFixture
     {
@@ -542,7 +542,6 @@ namespace Nancy.Testing.Tests
         }
 
         [Theory]
-        [InlineData("application/json")]
         [InlineData("application/xml")]
         public async Task Should_return_error_message_on_cyclical_exception(string accept)
         {
@@ -562,11 +561,11 @@ namespace Nancy.Testing.Tests
             var result = await browser.Get("/cyclical", with => with.Accept(accept));
 
             //Then
-            result.Body.AsString().ShouldNotBeEmpty();
+            var resultBody = result.Body.AsString();
+            resultBody.ShouldNotBeEmpty();
         }
 
         [Theory]
-        [InlineData("application/json")]
         [InlineData("application/xml")]
         public async Task Should_return_no_error_message_on_cyclical_exception_when_disabled_error_trace(string accept)
         {

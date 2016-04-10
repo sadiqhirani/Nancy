@@ -30,6 +30,7 @@
         public override void Configure(INancyEnvironment environment)
         {
             environment.Diagnostics(
+                enabled: true,
                 password: "password",
                 path: "/_Nancy",
                 cookieName: "__custom_cookie",
@@ -113,7 +114,7 @@
 
         public IEnumerable<Assembly> GetAssembliesToScan()
         {
-            return (this.filteredAssemblies ?? (this.filteredAssemblies = this.assemblyCatalog.GetAssemblies(AssemblyResolveStrategies.NancyReferencing)));
+            return (this.filteredAssemblies ?? (this.filteredAssemblies = this.assemblyCatalog.GetAssemblies()));
         }
     }
 }
