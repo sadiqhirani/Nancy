@@ -10,7 +10,7 @@
     {
         private readonly TraceConfiguration traceConfiguration;
 
-        private const string DisableErrorTracesTrueMessage = "Error details are currently disabled. Please set <code>StaticConfiguration.DisableErrorTraces = false;</code> to enable.";
+        private const string DisplayErrorTracesFalseMessage = "Error details are currently disabled.<br />To enable it, please set <strong>TraceConfiguration.DisplayErrorTraces</strong> to <strong>true</strong>.<br />For example by overriding your Bootstrapper's <strong>Configure</strong> method and calling<br/> <strong>environment.Tracing(enabled: false, displayErrorTraces: true);</strong>.";
 
         private static string template;
 
@@ -46,7 +46,7 @@
         /// </summary>
         public override void Execute()
         {
-            base.WriteLiteral(Template.Replace("[DETAILS]", this.traceConfiguration.DisplayErrorTraces ? this.Message : DisableErrorTracesTrueMessage));
+            base.WriteLiteral(Template.Replace("[DETAILS]", this.traceConfiguration.DisplayErrorTraces ? this.Message : DisplayErrorTracesFalseMessage));
         }
 
         private static string LoadResource(string filename)

@@ -10,28 +10,43 @@
     using Nancy.Configuration;
     using Nancy.ViewEngines;
 
+
+    /// <summary>
+    /// The information module for diagnostics.
+    /// </summary>
+    /// <seealso cref="Nancy.Diagnostics.DiagnosticModule" />
     public class InfoModule : DiagnosticModule
     {
         private readonly ITypeCatalog typeCatalog;
+        private readonly IAssemblyCatalog assemblyCatalog;
 
-        public InfoModule(IRootPathProvider rootPathProvider, NancyInternalConfiguration configuration, INancyEnvironment environment, ITypeCatalog typeCatalog)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InfoModule"/> class, with
+        /// the provided <paramref name="rootPathProvider"/>, <paramref name="configuration"/>, 
+        /// <paramref name="environment"/>, <paramref name="typeCatalog"/> and <paramref name="assemblyCatalog"/>.
+        /// </summary>
+        /// <param name="rootPathProvider">The root path provider.</param>
+        /// <param name="configuration">The configuration.</param>
+        /// <param name="environment">The environment.</param>
+        /// <param name="typeCatalog">The type catalog.</param>
+        /// <param name="assemblyCatalog">The assembly catalog.</param>
+        public InfoModule(IRootPathProvider rootPathProvider, NancyInternalConfiguration configuration, INancyEnvironment environment, ITypeCatalog typeCatalog, IAssemblyCatalog assemblyCatalog)
             : base("/info")
         {
             this.typeCatalog = typeCatalog;
+            this.assemblyCatalog = assemblyCatalog;
 
-            Get["/"] = async (_, __) =>
+            Get("/", _ =>
             {
                 return View["Info"];
-            };
+            });
 
-            Get["/data"] = async (_, __) =>
+            Get("/data", _ =>
             {
                 dynamic data = new ExpandoObject();
 
-
-
                 data.Nancy = new ExpandoObject();
-                data.Nancy.Version = string.Format("v{0}", this.GetType().Assembly.GetName().Version.ToString());
+                data.Nancy.Version = string.Format("v{0}", this.GetType().GetTypeInfo().Assembly.GetName().Version.ToString());
                 data.Nancy.TracesDisabled = !environment.GetValue<TraceConfiguration>().DisplayErrorTraces;
                 data.Nancy.CaseSensitivity = StaticConfiguration.CaseSensitive ? "Sensitive" : "Insensitive";
                 data.Nancy.RootPath = rootPathProvider.GetRootPath();
@@ -52,7 +67,7 @@
                 }
 
                 return this.Response.AsJson((object)data);
-            };
+            });
         }
 
         private string[] GetViewEngines()
@@ -64,9 +79,9 @@
                 .ToArray();
         }
 
-        private static string GetBootstrapperContainer()
+        private string GetBootstrapperContainer()
         {
-            var name = AppDomain.CurrentDomain
+            var name = this.assemblyCatalog
                 .GetAssemblies()
                 .Select(asm => asm.GetName())
                 .FirstOrDefault(asmName => asmName.Name != null && asmName.Name.StartsWith("Nancy.Bootstrappers."));
@@ -76,9 +91,9 @@
                 string.Format("{0} (v{1})", name.Name.Split('.').Last(), name.Version);
         }
 
-        private static string GetHosting()
+        private string GetHosting()
         {
-            var name = AppDomain.CurrentDomain
+            var name = this.assemblyCatalog
                 .GetAssemblies()
                 .Select(asm => asm.GetName())
                 .FirstOrDefault(asmName => asmName.Name != null && asmName.Name.StartsWith("Nancy.Hosting."));

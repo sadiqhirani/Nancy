@@ -2,6 +2,7 @@ namespace Nancy.Tests.Unit.Json.Simple
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using Nancy.Extensions;
     using Nancy.Json;
     using Nancy.Json.Simple;
@@ -71,7 +72,7 @@ namespace Nancy.Tests.Unit.Json.Simple
             strategy.RegisterConverters(new[] { new DateTimeJavaScriptConverter() });
 
             // When
-            var result = (DateTime)strategy.DeserializeObject(objectToDeserialize, typeof(DateTime));
+            var result = (DateTime)strategy.DeserializeObject(objectToDeserialize, typeof(DateTime), DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal);
 
             // Then
             result.ShouldEqual(expectedValue);
@@ -91,7 +92,8 @@ namespace Nancy.Tests.Unit.Json.Simple
 
             //Then
             canSerialize.ShouldBeTrue();
-            serializedObject.ShouldEqual(string.Format("2014-03-09T17:03:25.2340000+{0}", offset.Hours.ToString("00") + ":" + offset.Minutes.ToString("00")));
+            serializedObject.ShouldEqual(string.Format("2014-03-09T17:03:25.2340000{0}:{1}", 
+                offset.Hours.ToString("+00;-00"), offset.Minutes.ToString("00")));
         }
 
         [Fact]
@@ -108,7 +110,8 @@ namespace Nancy.Tests.Unit.Json.Simple
 
             //Then
             canSerialize.ShouldBeTrue();
-            serializedObject.ShouldEqual(string.Format("2014-03-09T17:03:25.2340000+{0}", offset.Hours.ToString("00") + ":" + offset.Minutes.ToString("00")));
+            serializedObject.ShouldEqual(string.Format("2014-03-09T17:03:25.2340000{0}:{1}",
+                offset.Hours.ToString("+00;-00"), offset.Minutes.ToString("00")));
         }
 
         [Fact]
@@ -170,8 +173,8 @@ namespace Nancy.Tests.Unit.Json.Simple
     public class NancySerializationStrategyTestWrapper : NancySerializationStrategy
     {
         public NancySerializationStrategyTestWrapper(
-            bool retainCasing = false)
-            : base(retainCasing)
+            bool retainCasing = false, bool serializeEnumToString = false)
+            : base(retainCasing, serializeEnumToString)
         {
 
         }

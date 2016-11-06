@@ -1,113 +1,84 @@
-function Install-Dnvm
-{
-    & where.exe dnvm 2>&1 | Out-Null
-    if(($LASTEXITCODE -ne 0) -Or ((Test-Path Env:\APPVEYOR) -eq $true))
-    {
-        Write-Host "DNVM not found"
-        &{$Branch='dev';iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/aspnet/Home/dev/dnvminstall.ps1'))}
+$CakeVersion = "0.16.2"
+$DotNetVersion = "1.0.0-preview2-003131";
+$DotNetInstallerUri = "https://raw.githubusercontent.com/dotnet/cli/rel/1.0.0-preview2/scripts/obtain/dotnet-install.ps1";
 
-        # Normally this happens automatically during install but AppVeyor has
-        # an issue where you may need to manually re-run setup from within this process.
-        if($env:DNX_HOME -eq $NULL)
-        {
-            Write-Host "Initial DNVM environment setup failed; running manual setup"
-            $tempDnvmPath = Join-Path $env:TEMP "dnvminstall"
-            $dnvmSetupCmdPath = Join-Path $tempDnvmPath "dnvm.ps1"
-            & $dnvmSetupCmdPath setup
-        }
+# Make sure tools folder exists
+$PSScriptRoot = $pwd
+
+$ToolPath = Join-Path $PSScriptRoot "tools"
+if (!(Test-Path $ToolPath)) {
+    Write-Verbose "Creating tools directory..."
+    New-Item -Path $ToolPath -Type directory | out-null
+}
+
+###########################################################################
+# INSTALL .NET CORE CLI
+###########################################################################
+
+Function Remove-PathVariable([string]$VariableToRemove)
+{
+    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
+    if ($path -ne $null)
+    {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
+    }
+
+    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
+    if ($path -ne $null)
+    {
+        $newItems = $path.Split(';', [StringSplitOptions]::RemoveEmptyEntries) | Where-Object { "$($_)" -inotlike $VariableToRemove }
+        [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
     }
 }
 
-function Get-DnxVersion
-{
-    $globalJson = join-path $PSScriptRoot "global.json"
-    $jsonData = Get-Content -Path $globalJson -Raw | ConvertFrom-JSON
-    return $jsonData.sdk.version
+# Get .NET Core CLI path if installed.
+$FoundDotNetCliVersion = $null;
+if (Get-Command dotnet -ErrorAction SilentlyContinue) {
+    $FoundDotNetCliVersion = dotnet --version;
 }
 
-function Restore-Packages
-{
-    param([string] $DirectoryName)
-    & dnu restore --quiet ("""" + $DirectoryName + """")
+if($FoundDotNetCliVersion -ne $DotNetVersion) {
+    $InstallPath = Join-Path $PSScriptRoot ".dotnet"
+    if (!(Test-Path $InstallPath)) {
+        mkdir -Force $InstallPath | Out-Null;
+    }
+    (New-Object System.Net.WebClient).DownloadFile($DotNetInstallerUri, "$InstallPath\dotnet-install.ps1");
+    & $InstallPath\dotnet-install.ps1 -Channel preview -Version $DotNetVersion -InstallDir $InstallPath;
+
+    Remove-PathVariable "$InstallPath"
+    $env:PATH = "$InstallPath;$env:PATH"
+    $env:DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+    $env:DOTNET_CLI_TELEMETRY_OPTOUT=1
+
+    & dotnet --info
 }
 
-function Pack-Projects
+###########################################################################
+# INSTALL CAKE
+###########################################################################
+
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+Function Unzip
 {
-    param([string] $DirectoryName, [string] $Configuration)
-    & dnu pack --quiet ("""" + $DirectoryName + """") --configuration $Configuration --out .\artifacts\packages; if($LASTEXITCODE -ne 0) { exit 2 }
+    param([string]$zipfile, [string]$outpath)
+
+    [System.IO.Compression.ZipFile]::ExtractToDirectory($zipfile, $outpath)
 }
 
-function Test-Projects
-{
-    & dnx test; if($LASTEXITCODE -ne 0) { exit 3 }
+
+# Make sure Cake has been installed.
+$CakePath = Join-Path $ToolPath "Cake.CoreCLR.$CakeVersion/Cake.dll"
+if (!(Test-Path $CakePath)) {
+    Write-Host "Installing Cake..."
+     (New-Object System.Net.WebClient).DownloadFile("https://www.nuget.org/api/v2/package/Cake.CoreCLR/$CakeVersion", "$ToolPath\Cake.CoreCLR.zip")
+     Unzip "$ToolPath\Cake.CoreCLR.zip" "$ToolPath/Cake.CoreCLR.$CakeVersion"
+     Remove-Item "$ToolPath\Cake.CoreCLR.zip"
 }
 
-function Remove-PathVariable
-{
-    param([string] $VariableToRemove)
-    $path = [Environment]::GetEnvironmentVariable("PATH", "User")
-    $newItems = $path.Split(';') | Where-Object { $_.ToString() -inotlike $VariableToRemove }
-    [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "User")
-    $path = [Environment]::GetEnvironmentVariable("PATH", "Process")
-    $newItems = $path.Split(';') | Where-Object { $_.ToString() -inotlike $VariableToRemove }
-    [Environment]::SetEnvironmentVariable("PATH", [System.String]::Join(';', $newItems), "Process")
-}
+###########################################################################
+# RUN BUILD SCRIPT
+###########################################################################
 
-########################
-# THE BUILD!
-########################
-
-Push-Location $PSScriptRoot
-
-$dnxVersion = Get-DnxVersion
-
-if (!$env:CONFIGURATION)
-{
-    $env:CONFIGURATION = "Release"
-}
-
-# Clean
-if(Test-Path .\artifacts) { Remove-Item .\artifacts -Force -Recurse }
-
-# Remove the installed DNVM from the path and force use of
-# per-user DNVM (which we can upgrade as needed without admin permissions)
-Remove-PathVariable "*Program Files\Microsoft DNX\DNVM*"
-
-# Make sure per-user DNVM is installed
-Install-Dnvm
-
-# Install DNX
-dnvm install $dnxVersion -r CoreCLR -NoNative
-dnvm install $dnxVersion -r CLR -NoNative
-
-# Start with regular CLR
-dnvm use $dnxVersion -r CLR
-
-# Package restore
-Get-ChildItem -Path . -Filter *.xproj -Recurse | ForEach-Object { Restore-Packages $_.DirectoryName }
-
-# Set build number
-$env:DNX_BUILD_VERSION = @{ $true = $env:APPVEYOR_BUILD_NUMBER; $false = 1 }[$env:APPVEYOR_BUILD_NUMBER -ne $NULL];
-Write-Host "Build number: " $env:DNX_BUILD_VERSION
-
-# Package
-Get-ChildItem -Path .\src -Filter *.xproj -Recurse | ForEach-Object { Pack-Projects $_.DirectoryName $env:CONFIGURATION }
-
-# Test
-Get-ChildItem -Path .\test -Filter *.xproj -Exclude Nancy.ViewEngines.Razor.Tests.Models.xproj -Recurse | ForEach-Object {
-    Push-Location $_.DirectoryName
-    Test-Projects $_.DirectoryName
-    Pop-Location
- }
-
-# Switch to Core CLR
-#dnvm use $dnxVersion -r CoreCLR
-
-# Test again
-# Get-ChildItem -Path .\test -Filter *Tests.xproj -Recurse | ForEach-Object {
-#    Push-Location $_.DirectoryName
-#    Test-Projects $_.DirectoryName
-#    Pop-Location
-# }
-
-Pop-Location
+& dotnet "$CakePath" $args
+exit $LASTEXITCODE

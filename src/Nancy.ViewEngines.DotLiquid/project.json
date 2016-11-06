@@ -1,19 +1,26 @@
-﻿{
-    "version": "2.0.0-*",
-
+{
+    "version": "2.0.0-barneyrubble",
     "description": "Enables using the DotLiquid view engine with Nancy.",
     "authors": [ "Andreas Håkansson, Steven Robbins and contributors" ],
-    "tags": [ "Nancy", "View Engine", "DotLiquid" ],
-    "projectUrl": "http://nancyfx.org",
-    "licenseUrl": "https://github.com/NancyFx/Nancy/blob/master/license.txt",
-    "iconUrl": "http://nancyfx.org/nancy-nuget.png",
+
+    "packOptions": {
+        "tags": [ "Nancy", "View Engine", "DotLiquid" ],
+        "projectUrl": "http://nancyfx.org",
+        "licenseUrl": "https://github.com/NancyFx/Nancy/blob/master/license.txt",
+        "iconUrl": "http://nancyfx.org/nancy-nuget.png"
+    },
+    
+    "buildOptions": {
+        "xmlDoc": true
+    },
 
     "dependencies": {
         "Nancy": { "target": "project" },
-        "DotLiquid": "1.7.0"
+      "DotLiquid": "1.7.0",
+      "AsyncUsageAnalyzers": "1.0.0-alpha003"
     },
 
     "frameworks": {
-        "net451": { }
+        "net452": { }
     }
 }

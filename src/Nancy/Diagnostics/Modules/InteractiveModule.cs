@@ -4,23 +4,33 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Linq;
+    using System.Reflection;
     using Nancy.Helpers;
 
+    /// <summary>
+    /// Nancy module for interactive diagnostics.
+    /// </summary>
+    /// <seealso cref="Nancy.Diagnostics.DiagnosticModule" />
     public class InteractiveModule : DiagnosticModule
     {
         private readonly IInteractiveDiagnostics interactiveDiagnostics;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InteractiveModule"/> class, with
+        /// the provided <paramref name="interactiveDiagnostics"/>.
+        /// </summary>
+        /// <param name="interactiveDiagnostics">The interactive diagnostics.</param>
         public InteractiveModule(IInteractiveDiagnostics interactiveDiagnostics)
             :base ("/interactive")
         {
             this.interactiveDiagnostics = interactiveDiagnostics;
 
-            Get["/"] = async (_, __) =>
+            Get("/", _ =>
             {
                 return View["InteractiveDiagnostics"];
-            };
+            });
 
-            Get["/providers"] = async (_, __) =>
+            Get("/providers", _ =>
             {
                 var providers = this.interactiveDiagnostics
                     .AvailableDiagnostics
@@ -30,14 +40,14 @@
                             p.Description,
                             Type = p.GetType().Name,
                             p.GetType().Namespace,
-                            Assembly = p.GetType().Assembly.GetName().Name
+                            Assembly = p.GetType().GetTypeInfo().Assembly.GetName().Name
                         })
                     .ToArray();
 
                 return this.Response.AsJson(providers);
-            };
+            });
 
-            Get["/providers/{providerName}"] = async (ctx, __) =>
+            Get("/providers/{providerName}", ctx =>
             {
                 var providerName =
                     HttpUtility.UrlDecode((string)ctx.providerName);
@@ -52,22 +62,22 @@
 
                 var methods = diagnostic.Methods
                     .Select(m => new
+                    {
+                        m.MethodName,
+                        ReturnType = m.ReturnType.ToString(),
+                        m.Description,
+                        Arguments = m.Arguments.Select(a => new
                         {
-                            m.MethodName,
-                            ReturnType = m.ReturnType.ToString(),
-                            m.Description,
-                            Arguments = m.Arguments.Select(a => new
-                            {
-                                ArgumentName = a.Item1,
-                                ArgumentType = a.Item2.ToString()
-                            })
+                            ArgumentName = a.Item1,
+                            ArgumentType = a.Item2.ToString()
                         })
+                    })
                     .ToArray();
 
                 return this.Response.AsJson(methods);
-            };
+            });
 
-            Get["/providers/{providerName}/{methodName}"] = async (ctx, __) =>
+            Get("/providers/{providerName}/{methodName}", ctx =>
             {
                 var providerName =
                     HttpUtility.UrlDecode((string)ctx.providerName);
@@ -87,9 +97,10 @@
                     GetArguments(method, this.Request.Query);
 
                 return this.Response.AsJson(new { Result = this.interactiveDiagnostics.ExecuteDiagnostic(method, arguments) });
-            };
 
-            Get["/templates/{providerName}/{methodName}"] = async (ctx, __) =>
+            });
+
+            Get<Response>("/templates/{providerName}/{methodName}", ctx =>
             {
                 var providerName =
                     HttpUtility.UrlDecode((string)ctx.providerName);
@@ -114,7 +125,7 @@
                 }
 
                 return template;
-            };
+            });
         }
 
         private static object[] GetArguments(InteractiveDiagnosticMethod method, dynamic query)

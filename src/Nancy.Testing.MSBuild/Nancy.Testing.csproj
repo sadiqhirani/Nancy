@@ -36,7 +36,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\..\Nancy.ruleset</CodeAnalysisRuleSet>
     <DocumentationFile>bin\Debug\Nancy.Testing.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
@@ -89,8 +89,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AngleSharp, Version=0.9.5.41771, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)packages\AngleSharp.0.9.5\lib\net45\AngleSharp.dll</HintPath>
+    <Reference Include="AngleSharp, Version=0.9.8.1, Culture=neutral, PublicKeyToken=e83494dcdc6d31ea, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\AngleSharp.0.9.8.1\lib\net45\AngleSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
@@ -117,9 +117,6 @@
     </Compile>
     <Compile Include="..\Nancy.Testing\Asserts.cs">
       <Link>Asserts.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy.Testing\LegacyBrowser.cs">
-      <Link>LegacyBrowser.cs</Link>
     </Compile>
     <Compile Include="..\Nancy.Testing\Browser.cs">
       <Link>Browser.cs</Link>
@@ -184,12 +181,6 @@
     <Compile Include="..\Nancy.Testing\PathHelper.cs">
       <Link>PathHelper.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy.Testing\Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-      <Link>Properties\Resources.Designer.cs</Link>
-    </Compile>
     <Compile Include="..\Nancy.Testing\QueryWrapper.cs">
       <Link>QueryWrapper.cs</Link>
     </Compile>
@@ -208,21 +199,15 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\Nancy.Testing\Resources\Nancy Testing Cert.pfx">
-      <Link>Resources\Nancy Testing Cert.pfx</Link>
+    <EmbeddedResource Include="..\Nancy.Testing\Resources\NancyTestingCert.pfx">
+      <Link>Resources\NancyTestingCert.pfx</Link>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="..\Nancy.Testing\Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <Link>Properties\Resources.resx</Link>
-    </EmbeddedResource>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <Analyzer Include="..\..\packages\AsyncUsageAnalyzers.1.0.0-alpha003\analyzers\dotnet\AsyncUsageAnalyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

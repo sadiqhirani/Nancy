@@ -1,6 +1,6 @@
-# Meet Nancy [![NuGet Version](http://img.shields.io/nuget/v/Nancy.svg?style=flat)](https://www.nuget.org/packages/Nancy/) [![NuGet Downloads](http://img.shields.io/nuget/dt/Nancy.svg?style=flat)](https://www.nuget.org/packages/Nancy/)
+# Meet Nancy [![NuGet Version](http://img.shields.io/nuget/v/Nancy.svg?style=flat)](https://www.nuget.org/packages/Nancy/) [![Slack Status](http://slack.nancyfx.org/badge.svg)](http://slack.nancyfx.org)
 
-Nancy is a lightweight, low-ceremony, framework for building HTTP based services on .Net and [Mono](http://mono-project.com). The goal of the framework is to stay out of the way as much as possible and provide a super-duper-happy-path to all interactions.
+Nancy is a lightweight, low-ceremony, framework for building HTTP based services on .NET Framework/Core and [Mono](http://mono-project.com). The goal of the framework is to stay out of the way as much as possible and provide a super-duper-happy-path to all interactions.
 
 Nancy is designed to handle `DELETE`, `GET`, `HEAD`, `OPTIONS`, `POST`, `PUT` and `PATCH` requests and provides a simple, elegant, [Domain Specific Language (DSL)](http://en.wikipedia.org/wiki/Domain-specific_language) for returning a response with just a couple of keystrokes, leaving you with more time to focus on the important bits.. 
 **your** code and **your** application.
@@ -11,9 +11,9 @@ public class Module : NancyModule
 {
     public Module()
     {
-        Get["/greet/{name}"] = x => {
+        Get("/greet/{name}", x => {
             return string.Concat("Hello ", x.name);
-        };
+        });
     }
 }
 ```
@@ -47,7 +47,7 @@ Above all, creating an application with Nancy should be a pleasure, and hopefull
 
 ## Community
 
-Nancy followers can be found in the JabbR [#NancyFX room](http://jabbr.net/#/rooms/nancyfx). You can also find Nancy on Twitter using the #NancyFx hashtag.	
+Nancy followers can be found on Slack [NancyFx team](http://nancyfx.slack.com). You can also find Nancy on Twitter using the #NancyFx hashtag.	
 	
 ## Help out
 
@@ -80,8 +80,13 @@ Nancy is licensed under [MIT](http://www.opensource.org/licenses/mit-license.php
 
 ## CI Builds
 
-### TC (.net) 
-[![Build Status](http://nancy-ci.cloudapp.net/app/rest/builds/buildType:%28id:Nancy_NancyMaster%29/statusIcon)](http://nancy-ci.cloudapp.net/viewType.html?buildTypeId=Nancy_NancyMaster&guest=1)
+### AppVeyor (.NET) 
+[![Build Status](https://ci.appveyor.com/api/projects/status/mpd9lbxvithu16vg?svg=true)](https://ci.appveyor.com/project/NancyFx/nancy)
 
 ### Travis (Mono) 
 [![Build Status](https://travis-ci.org/NancyFx/Nancy.png?branch=master)](https://travis-ci.org/NancyFx/Nancy)
+
+## Latest build (of master)
+
+### MyGet
+https://www.myget.org/gallery/nancyfx

@@ -1,15 +1,20 @@
-﻿{
-    "version": "2.0.0-*",
+{
+    "version": "2.0.0-barneyrubble",
 
     "dependencies": {
-        "Nancy": { "target": "project" },
+      "AsyncUsageAnalyzers": "1.0.0-alpha003",
+      "Nancy": { "target": "project" },
         "Nancy.ViewEngines.Razor": { "target": "project" }
+    },
+    
+    "buildOptions": {
+        "xmlDoc": true
     },
 
     "frameworks": {
-        "net451": {
+        "net452": {
             "frameworkAssemblies": {
-                "System.Web": "4.0.0.0"
+                "System.Web": { "type": "build" }
             }
         }
     }

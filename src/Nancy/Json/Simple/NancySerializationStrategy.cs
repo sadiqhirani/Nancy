@@ -14,6 +14,7 @@
     public class NancySerializationStrategy : PocoJsonSerializerStrategy
     {
         private readonly bool retainCasing;
+        private readonly bool serializeEnumToString;
         private readonly List<JavaScriptConverter> converters = new List<JavaScriptConverter>();
         private readonly List<JavaScriptPrimitiveConverter> primitiveConverters = new List<JavaScriptPrimitiveConverter>();
         private readonly ConcurrentDictionary<Type, JavaScriptConverter> converterCache = new ConcurrentDictionary<Type, JavaScriptConverter>();
@@ -22,8 +23,8 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="NancySerializationStrategy"/> class.
         /// </summary>
-        /// <remarks>C# casing of objects will be defaulted to camelCase</remarks>
-        public NancySerializationStrategy() : this(false)
+        /// <remarks>C# casing of objects will be defaulted to camelCase and enums treated as integers</remarks>
+        public NancySerializationStrategy() : this(false, false)
         {
 
         }
@@ -32,9 +33,11 @@
         ///  Initializes a new instance of the <see cref="NancySerializationStrategy"/> class.
         /// </summary>
         /// <param name="retainCasing">Retain C# casing of objects when serialized</param>
-        public NancySerializationStrategy(bool retainCasing)
+        /// <param name="serializeEnumToString">Should enums be represented as string</param>
+        public NancySerializationStrategy(bool retainCasing, bool serializeEnumToString)
         {
             this.retainCasing = retainCasing;
+            this.serializeEnumToString = serializeEnumToString;
         }
 
         /// <summary>
@@ -72,8 +75,9 @@
         /// </summary>
         /// <param name="value">The object to deserialize</param>
         /// <param name="type">The type of object to deserialize</param>
+        /// <param name="dateTimeStyles">The <see cref="DateTimeStyles"/> ton convert <see cref="DateTime"/> objects</param>
         /// <returns>A instance of <paramref name="type" /> deserialized from <paramref name="value"/></returns>
-        public override object DeserializeObject(object value, Type type)
+        public override object DeserializeObject(object value, Type type, DateTimeStyles dateTimeStyles)
         {
             var typeInfo = type.GetTypeInfo();
             if (typeInfo.IsEnum || (ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type).GetTypeInfo().IsEnum))
@@ -96,7 +100,7 @@
             var valueDictionary = value as IDictionary<string, object>;
             if (valueDictionary == null)
             {
-                return base.DeserializeObject(value, type);
+                return base.DeserializeObject(value, type, dateTimeStyles);
             }
 
             var javascriptConverter = this.FindJavaScriptConverter(type);
@@ -107,7 +111,7 @@
 
             if (!typeInfo.IsGenericType)
             {
-                return base.DeserializeObject(value, type);
+                return base.DeserializeObject(value, type, dateTimeStyles);
             }
 
             var genericType = typeInfo.GetGenericTypeDefinition();
@@ -115,7 +119,7 @@
 
             if (genericTypeConverter == null)
             {
-                return base.DeserializeObject(value, type);
+                return base.DeserializeObject(value, type, dateTimeStyles);
             }
 
             var values = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
@@ -124,12 +128,21 @@
             for (var i = 0; i < genericArguments.Length; i++)
             {
                 var deserializedObject = this.DeserializeObject(valueDictionary.Values.ElementAt(i),
-                    genericArguments[i]);
+                    genericArguments[i], dateTimeStyles);
 
                 values.Add(valueDictionary.Keys.ElementAt(i), deserializedObject);
             }
 
             return genericTypeConverter.Deserialize(values, type);
+        }
+
+        protected override object SerializeEnum(Enum p)
+        {
+            if (this.serializeEnumToString)
+            {
+                return p.ToString();
+            }
+            return base.SerializeEnum(p);
         }
 
         /// <summary>

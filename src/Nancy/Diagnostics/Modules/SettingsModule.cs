@@ -7,15 +7,22 @@
     using System.Text.RegularExpressions;
     using Nancy.ModelBinding;
 
+    /// <summary>
+    /// Nancy module for diagnostic settings.
+    /// </summary>
+    /// <seealso cref="Nancy.Diagnostics.DiagnosticModule" />
     public class SettingsModule : DiagnosticModule
     {
         private static readonly IEnumerable<Type> Types = new[] { typeof(StaticConfiguration) }.Union(
                                                                   typeof(StaticConfiguration).GetNestedTypes(BindingFlags.Static | BindingFlags.Public));
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SettingsModule"/> class.
+        /// </summary>
         public SettingsModule()
             : base("/settings")
         {
-            Get["/"] = async (_, __) =>
+            Get("/", _ =>
             {
                 var properties = Types.SelectMany(t => t.GetProperties(BindingFlags.Static | BindingFlags.Public))
                                       .Where(x => x.PropertyType == typeof(bool));
@@ -34,9 +41,9 @@
                         };
 
                 return View["Settings", model];
-            };
+            });
 
-            Post["/"] = async (_, __) => {
+            Post("/", _ => {
 
                 var model =
                     this.Bind<SettingsModel>();
@@ -49,7 +56,7 @@
                 }
 
                 return HttpStatusCode.OK;
-            };
+            });
         }
 
         private static PropertyInfo GetProperty(SettingsModel model)
@@ -69,10 +76,22 @@
         }
     }
 
+
+    /// <summary>
+    /// Data model for settings.
+    /// </summary>
     public class SettingsModel
     {
+        /// <summary>
+        /// Gets or sets the name for the setting.
+        /// </summary>
+        /// <value>The name of the setting</value>
         public string Name { get; set; }
 
+        /// <summary>
+        /// Gets or sets the value for this setting.
+        /// </summary>
+        /// <value><see langword="true"/> or <see langword="false"/></value>
         public bool Value { get; set; }
     }
 }

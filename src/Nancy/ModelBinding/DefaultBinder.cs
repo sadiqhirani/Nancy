@@ -8,6 +8,7 @@ namespace Nancy.ModelBinding
     using System.Text.RegularExpressions;
 
     using Nancy.Extensions;
+    using Nancy.Responses.Negotiation;
 
     /// <summary>
     /// Default binder - used as a fallback when a specific modelbinder
@@ -23,11 +24,29 @@ namespace Nancy.ModelBinding
 
         private readonly BindingDefaults defaults;
 
-        private readonly static MethodInfo ToListMethodInfo = typeof(Enumerable).GetMethod("ToList", BindingFlags.Public | BindingFlags.Static);
-        private readonly static MethodInfo ToArrayMethodInfo = typeof(Enumerable).GetMethod("ToArray", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo ToListMethodInfo = typeof(Enumerable).GetMethod("ToList", BindingFlags.Public | BindingFlags.Static);
+        private static readonly MethodInfo ToArrayMethodInfo = typeof(Enumerable).GetMethod("ToArray", BindingFlags.Public | BindingFlags.Static);
         private static readonly Regex BracketRegex = new Regex(@"\[(\d+)\]\z", RegexOptions.Compiled);
         private static readonly Regex UnderscoreRegex = new Regex(@"_(\d+)\z", RegexOptions.Compiled);
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DefaultBinder"/> class, with
+        /// the provided <paramref name="typeConverters"/>, <paramref name="bodyDeserializers"/>, 
+        /// <paramref name="fieldNameConverter"/> and <paramref name="defaults"/>.
+        /// </summary>
+        /// <param name="typeConverters">The type converters.</param>
+        /// <param name="bodyDeserializers">The body deserializers.</param>
+        /// <param name="fieldNameConverter">The field name converter.</param>
+        /// <param name="defaults">The defaults for bindings.</param>
+        /// <exception cref="System.ArgumentNullException">
+        /// typeConverters
+        /// or
+        /// bodyDeserializers
+        /// or
+        /// fieldNameConverter
+        /// or
+        /// defaults
+        /// </exception>
         public DefaultBinder(IEnumerable<ITypeConverter> typeConverters, IEnumerable<IBodyDeserializer> bodyDeserializers, IFieldNameConverter fieldNameConverter, BindingDefaults defaults)
         {
             if (typeConverters == null)
@@ -71,14 +90,14 @@ namespace Nancy.ModelBinding
             if (modelType.IsArray() || modelType.IsCollection() || modelType.IsEnumerable())
             {
                 //make sure it has a generic type
-                if (modelType.IsGenericType())
+                if (modelType.GetTypeInfo().IsGenericType)
                 {
                     genericType = modelType.GetGenericArguments().FirstOrDefault();
                 }
                 else
                 {
                     var ienumerable =
-                        modelType.GetInterfaces().Where(i => i.IsGenericType()).FirstOrDefault(
+                        modelType.GetInterfaces().Where(i => i.GetTypeInfo().IsGenericType).FirstOrDefault(
                             i => i.GetGenericTypeDefinition() == typeof(IEnumerable<>));
                     genericType = ienumerable == null ? null : ienumerable.GetGenericArguments().FirstOrDefault();
                 }
@@ -125,7 +144,7 @@ namespace Nancy.ModelBinding
                         }
                         else
                         {
-                            genericinstance = Activator.CreateInstance(bindingContext.GenericType);
+                            genericinstance = bindingContext.GenericType.CreateInstance();
                             model.Add(genericinstance);
                         }
 
@@ -240,7 +259,7 @@ namespace Nancy.ModelBinding
         {
             var bodyDeserializedModelType = bodyDeserializedModel.GetType();
 
-            if (bodyDeserializedModelType.IsValueType)
+            if (bodyDeserializedModelType.GetTypeInfo().IsValueType)
             {
                 bindingContext.Model = bodyDeserializedModel;
                 return;
@@ -255,7 +274,7 @@ namespace Nancy.ModelBinding
                 {
                     var model = (IList)bindingContext.Model;
 
-                    if (o.GetType().IsValueType || o is string)
+                    if (o.GetType().GetTypeInfo().IsValueType || o is string)
                     {
                         HandleValueTypeCollectionElement(model, count, o);
                     }
@@ -327,7 +346,7 @@ namespace Nancy.ModelBinding
 
         private static bool IsDefaultValue(object existingValue, Type propertyType)
         {
-            return propertyType.IsValueType
+            return propertyType.GetTypeInfo().IsValueType
                 ? Equals(existingValue, Activator.CreateInstance(propertyType))
                 : existingValue == null;
         }
@@ -437,11 +456,11 @@ namespace Nancy.ModelBinding
 
             if (instance == null)
             {
-                return Activator.CreateInstance(modelType, true);
+                return modelType.CreateInstance(true);
             }
 
             return !modelType.IsInstanceOfType(instance) ?
-                Activator.CreateInstance(modelType, true) :
+                modelType.CreateInstance(true) :
                 instance;
         }
 
@@ -485,7 +504,7 @@ namespace Nancy.ModelBinding
 
             var contentType = GetRequestContentType(context.Context);
 
-            if (string.IsNullOrEmpty(contentType))
+            if (contentType == null)
             {
                 return null;
             }
@@ -498,19 +517,14 @@ namespace Nancy.ModelBinding
                 : null;
         }
 
-        private static string GetRequestContentType(NancyContext context)
+        private static MediaRange GetRequestContentType(NancyContext context)
         {
             if (context == null || context.Request == null)
             {
-                return String.Empty;
+                return null;
             }
 
-            var contentType =
-                context.Request.Headers.ContentType;
-
-            return (string.IsNullOrEmpty(contentType))
-                ? string.Empty
-                : contentType;
+            return context.Request.Headers.ContentType;
         }
     }
 }

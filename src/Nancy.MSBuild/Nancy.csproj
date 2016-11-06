@@ -34,9 +34,10 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\..\Nancy.ruleset</CodeAnalysisRuleSet>
     <DocumentationFile>bin\Debug\Nancy.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -314,14 +315,14 @@
     <Compile Include="..\Nancy\ErrorHandling\RouteExecutionEarlyExitException.cs">
       <Link>ErrorHandling\RouteExecutionEarlyExitException.cs</Link>
     </Compile>
+    <Compile Include="..\Nancy\Extensions\MemoryStreamExtensions.cs">
+      <Link>Extensions\MemoryStreamExtensions.cs</Link>
+    </Compile>
     <Compile Include="..\Nancy\Extensions\ModelValidationErrorExtensions.cs">
       <Link>Extensions\ModelValidationErrorExtensions.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\Extensions\RequestStreamExtensions.cs">
       <Link>Extensions\RequestStreamExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\Extensions\StreamExtensions.cs">
-      <Link>Extensions\StreamExtensions.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\Extensions\TypeExtensions.cs">
       <Link>Extensions\TypeExtensions.cs</Link>
@@ -355,6 +356,15 @@
     </Compile>
     <Compile Include="..\Nancy\Helpers\ExceptionExtensions.cs">
       <Link>Helpers\ExceptionExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\HttpLink.cs">
+      <Link>HttpLink.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\HttpLinkBuilder.cs">
+      <Link>HttpLinkBuilder.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\HttpLinkRelation.cs">
+      <Link>HttpLinkRelation.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\IAssemblyCatalog.cs">
       <Link>IAssemblyCatalog.cs</Link>
@@ -427,9 +437,6 @@
     </Compile>
     <Compile Include="..\Nancy\NancyEngineExtensions.cs">
       <Link>NancyEngineExtensions.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\LegacyNancyModule.cs">
-      <Link>LegacyNancyModule.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\NegotiatorExtensions.cs">
       <Link>NegotiatorExtensions.cs</Link>
@@ -1181,9 +1188,6 @@
     <Compile Include="..\Nancy\Session\CookieBasedSessions.cs">
       <Link>Session\CookieBasedSessions.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy\Cryptography\RijndaelEncryptionProvider.cs">
-      <Link>Cryptography\RijndaelEncryptionProvider.cs</Link>
-    </Compile>
     <Compile Include="..\Nancy\DefaultObjectSerializer.cs">
       <Link>DefaultObjectSerializer.cs</Link>
     </Compile>
@@ -1234,9 +1238,6 @@
     </Compile>
     <Compile Include="..\Nancy\Routing\NotFoundRoute.cs">
       <Link>Routing\NotFoundRoute.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\Routing\Route.cs">
-      <Link>Routing\Route.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\DynamicDictionary.cs">
       <Link>DynamicDictionary.cs</Link>
@@ -1361,8 +1362,20 @@
     <Compile Include="..\Nancy\GlobalizationConfiguration.cs" />
     <Compile Include="..\Nancy\GlobalizationConfigurationExtensions.cs" />
     <Compile Include="..\Nancy\DefaultGlobalizationConfigurationProvider.cs" />
+    <Compile Include="..\Nancy\Cryptography\AesEncryptionProvider.cs">
+      <Link>Cryptography\AesEncryptionProvider.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\Json\SimpleJson.cs">
+      <Link>Json\SimpleJson.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\Extensions\ObjectExtensions.cs">
+      <Link>Extensions\ObjectExtensions.cs</Link>
+    </Compile>
     <Compile Include="..\Nancy\Configuration\ConfigurationException.cs">
       <Link>Configuration\ConfigurationException.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\Routing\Route.cs">
+      <Link>Routing\Route.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>
@@ -1521,6 +1534,12 @@
     <EmbeddedResource Include="..\Nancy\Diagnostics\Views\login.sshtml">
       <Link>Diagnostics\Views\login.sshtml</Link>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Analyzer Include="..\..\packages\AsyncUsageAnalyzers.1.0.0-alpha003\analyzers\dotnet\AsyncUsageAnalyzers.dll" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

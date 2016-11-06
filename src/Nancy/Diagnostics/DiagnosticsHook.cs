@@ -4,6 +4,7 @@ namespace Nancy.Diagnostics
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using Nancy.Bootstrapper;
     using Nancy.Configuration;
@@ -32,7 +33,7 @@ namespace Nancy.Diagnostics
         /// Enables the diagnostics dashboard and will intercept all requests that are passed to
         /// the condigured paths.
         /// </summary>
-        public static void Enable(IPipelines pipelines, IEnumerable<IDiagnosticsProvider> providers, IRootPathProvider rootPathProvider, IRequestTracing requestTracing, NancyInternalConfiguration configuration, IModelBinderLocator modelBinderLocator, IEnumerable<IResponseProcessor> responseProcessors, IEnumerable<IRouteSegmentConstraint> routeSegmentConstraints, ICultureService cultureService, IRequestTraceFactory requestTraceFactory, IEnumerable<IRouteMetadataProvider> routeMetadataProviders, ITextResource textResource, INancyEnvironment environment, ITypeCatalog typeCatalog)
+        public static void Enable(IPipelines pipelines, IEnumerable<IDiagnosticsProvider> providers, IRootPathProvider rootPathProvider, IRequestTracing requestTracing, NancyInternalConfiguration configuration, IModelBinderLocator modelBinderLocator, IEnumerable<IResponseProcessor> responseProcessors, IEnumerable<IRouteSegmentConstraint> routeSegmentConstraints, ICultureService cultureService, IRequestTraceFactory requestTraceFactory, IEnumerable<IRouteMetadataProvider> routeMetadataProviders, ITextResource textResource, INancyEnvironment environment, ITypeCatalog typeCatalog, IAssemblyCatalog assemblyCatalog)
         {
             var diagnosticsConfiguration =
                 environment.GetValue<DiagnosticsConfiguration>();
@@ -40,7 +41,7 @@ namespace Nancy.Diagnostics
             var diagnosticsEnvironment =
                 GetDiagnosticsEnvironment();
 
-            var diagnosticsModuleCatalog = new DiagnosticsModuleCatalog(providers, rootPathProvider, requestTracing, configuration, diagnosticsEnvironment, typeCatalog);
+            var diagnosticsModuleCatalog = new DiagnosticsModuleCatalog(providers, rootPathProvider, requestTracing, configuration, diagnosticsEnvironment, typeCatalog, assemblyCatalog);
 
             var diagnosticsRouteCache = new RouteCache(
                 diagnosticsModuleCatalog,
@@ -95,7 +96,7 @@ namespace Nancy.Diagnostics
                             }
 
                             return new EmbeddedFileResponse(
-                                typeof(DiagnosticsHook).Assembly,
+                                typeof(DiagnosticsHook).GetTypeInfo().Assembly,
                                 resourceNamespace,
                                 Path.GetFileName(ctx.Request.Url.Path));
                         }
@@ -118,6 +119,7 @@ namespace Nancy.Diagnostics
             var diagnosticsEnvironment =
                 new DefaultNancyEnvironment();
 
+            diagnosticsEnvironment.Globalization(new[] { "en-US" });
             diagnosticsEnvironment.Json(retainCasing: false);
             diagnosticsEnvironment.AddValue(ViewConfiguration.Default);
             diagnosticsEnvironment.Tracing(
@@ -135,6 +137,11 @@ namespace Nancy.Diagnostics
                 configuration.SlidingTimeout != 0;
         }
 
+        /// <summary>
+        /// Disables the specified pipelines.
+        /// <seealso cref="IPipelines"/>
+        /// </summary>
+        /// <param name="pipelines">The pipelines.</param>
         public static void Disable(IPipelines pipelines)
         {
             pipelines.BeforeRequest.RemoveByName(PipelineKey);
@@ -168,10 +175,10 @@ namespace Nancy.Diagnostics
 
             if (ctx.Response == null)
             {
-                // Don't care about async here, so just get the result
-                var task = resolveResult.Route.Invoke(resolveResult.Parameters, CancellationToken);
-                task.Wait();
-                ctx.Response = task.Result;
+                var routeResult = resolveResult.Route.Invoke(resolveResult.Parameters, CancellationToken);
+                routeResult.Wait();
+
+                ctx.Response = (Response)routeResult.Result;
             }
 
             if (ctx.Request.Method.Equals("HEAD", StringComparison.OrdinalIgnoreCase))
@@ -242,7 +249,7 @@ namespace Nancy.Diagnostics
             var decryptedValue = diagnosticsConfiguration.CryptographyConfiguration.EncryptionProvider.Decrypt(encryptedSession);
             var session = serializer.Deserialize(decryptedValue) as DiagnosticsSession;
 
-            if (session == null || session.Expiry < DateTime.Now || !SessionPasswordValid(session, diagnosticsConfiguration.Password))
+            if (session == null || session.Expiry < DateTimeOffset.Now || !SessionPasswordValid(session, diagnosticsConfiguration.Password))
             {
                 return null;
             }
