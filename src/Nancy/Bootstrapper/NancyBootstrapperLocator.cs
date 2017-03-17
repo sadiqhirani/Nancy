@@ -41,28 +41,24 @@
             }
         }
 
-        private static IReadOnlyCollection<Type> GetAvailableBootstrapperTypes()
+        private static ITypeCatalog GetDefaultTypeCatalog()
         {
-            var assemblies = GetNancyReferencingAssemblies()
-                .Where(x => !x.IsDynamic)
-                .ToArray();
+            var assemblyCatalog = GetAssemblyCatalog();
 
-            return assemblies
-                .SelectMany(x => x.SafeGetExportedTypes())
-                .Where(x => !x.GetTypeInfo().IsAbstract && x.GetTypeInfo().IsPublic)
-                .Where(x => typeof(INancyBootstrapper).IsAssignableFrom(x))
-                .ToArray();
+            return new DefaultTypeCatalog(assemblyCatalog);
         }
 
-        private static IEnumerable<Assembly> GetNancyReferencingAssemblies()
+        private static IReadOnlyCollection<Type> GetAvailableBootstrapperTypes(ITypeCatalog types)
+        {
+            return types.GetTypesAssignableTo<INancyBootstrapper>(TypeResolveStrategies.ExcludeNancy);
+        }
+
+        private static IAssemblyCatalog GetAssemblyCatalog()
         {
 #if CORE
-            var assemblyCatalog =
-                new DependencyContextAssemblyCatalog();
-
-            return assemblyCatalog.GetAssemblies();
+            return new DependencyContextAssemblyCatalog();
 #else
-            return AppDomain.CurrentDomain.GetAssemblies().Where(IsNancyReferencing).Where(assembly => !assembly.ReflectionOnly);
+            return new AppDomainAssemblyCatalog();
 #endif
         }
 
@@ -86,9 +82,14 @@
         }
 #endif
 
-        private static Type GetBootstrapperType()
+        internal static Type GetBootstrapperType()
         {
-            var customBootstrappers = GetAvailableBootstrapperTypes();
+            return GetBootstrapperType(GetDefaultTypeCatalog());
+        }
+
+        internal static Type GetBootstrapperType(ITypeCatalog typeCatalog)
+        {
+            var customBootstrappers = GetAvailableBootstrapperTypes(typeCatalog);
 
             if (!customBootstrappers.Any())
             {

@@ -75,7 +75,8 @@
     <OutputPath>bin\MonoRelease\</OutputPath>
     <DefineConstants>TRACE;MONO</DefineConstants>
     <Optimize>true</Optimize>
-    <DebugType></DebugType>
+    <DebugType>
+    </DebugType>
     <PlatformTarget>anycpu</PlatformTarget>
     <CodeAnalysisLogFile>bin\Release\Nancy.Tests.dll.CodeAnalysisLog.xml</CodeAnalysisLogFile>
     <CodeAnalysisUseTypeNameInSuppression>true</CodeAnalysisUseTypeNameInSuppression>
@@ -261,8 +262,8 @@
     <Compile Include="..\Nancy.Tests\Unit\ErrorHandling\DefaultStatusCodeHandlerFixture.cs">
       <Link>Unit\ErrorHandling\DefaultStatusCodeHandlerFixture.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy.Tests\Unit\Extensions\RequestStreamExtensionsFixture.cs">
-      <Link>Unit\Extensions\RequestStreamExtensionsFixture.cs</Link>
+    <Compile Include="..\Nancy.Tests\Unit\Extensions\StreamExtensionsFixture.cs">
+      <Link>Unit\Extensions\StreamExtensionsFixture.cs</Link>
     </Compile>
     <Compile Include="..\Nancy.Tests\Unit\Extensions\TypeExtensionsFixture.cs">
       <Link>Unit\Extensions\TypeExtensionsFixture.cs</Link>
@@ -603,9 +604,6 @@
     <Compile Include="..\Nancy.Tests\Fakes\FakeViewEngine.cs">
       <Link>Fakes\FakeViewEngine.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy.Tests\Unit\ViewEngines\DefaultViewRendererFixture.cs">
-      <Link>Unit\ViewEngines\DefaultViewRendererFixture.cs</Link>
-    </Compile>
     <Compile Include="..\Nancy.Tests\Unit\ViewEngines\FileSystemViewLocationProviderFixture.cs">
       <Link>Unit\ViewEngines\FileSystemViewLocationProviderFixture.cs</Link>
     </Compile>
@@ -650,6 +648,9 @@
     </Compile>
     <Compile Include="..\Nancy.Tests\Unit\Responses\GenericFileResponseFixture.cs">
       <Link>Unit\Responses\GenericFileResponseFixture.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy.Tests\Unit\AppDomainAssemblyCatalogFixture.cs">
+      <Link>Unit\AppDomainAssemblyCatalogFixture.cs</Link>
     </Compile>
   </ItemGroup>
   <ItemGroup>

@@ -321,8 +321,8 @@
     <Compile Include="..\Nancy\Extensions\ModelValidationErrorExtensions.cs">
       <Link>Extensions\ModelValidationErrorExtensions.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy\Extensions\RequestStreamExtensions.cs">
-      <Link>Extensions\RequestStreamExtensions.cs</Link>
+    <Compile Include="..\Nancy\Extensions\StreamExtensions.cs">
+      <Link>Extensions\StreamExtensions.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\Extensions\TypeExtensions.cs">
       <Link>Extensions\TypeExtensions.cs</Link>
@@ -356,6 +356,9 @@
     </Compile>
     <Compile Include="..\Nancy\Helpers\ExceptionExtensions.cs">
       <Link>Helpers\ExceptionExtensions.cs</Link>
+    </Compile>
+    <Compile Include="..\Nancy\Helpers\ProxyNancyReferenceProber.cs">
+      <Link>Helpers\ProxyNancyReferenceProber.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\HttpLink.cs">
       <Link>HttpLink.cs</Link>
@@ -978,9 +981,6 @@
     <Compile Include="..\Nancy\Localization\ResourceBasedTextResource.cs">
       <Link>Localization\ResourceBasedTextResource.cs</Link>
     </Compile>
-    <Compile Include="..\Nancy\ViewEngines\DefaultViewRenderer.cs">
-      <Link>ViewEngines\DefaultViewRenderer.cs</Link>
-    </Compile>
     <Compile Include="..\Nancy\ViewEngines\DefaultViewCache.cs">
       <Link>ViewEngines\DefaultViewCache.cs</Link>
     </Compile>
@@ -1280,9 +1280,6 @@
     </Compile>
     <Compile Include="..\Nancy\ViewEngines\IViewFactory.cs">
       <Link>ViewEngines\IViewFactory.cs</Link>
-    </Compile>
-    <Compile Include="..\Nancy\ViewEngines\IViewRenderer.cs">
-      <Link>ViewEngines\IViewRenderer.cs</Link>
     </Compile>
     <Compile Include="..\Nancy\ViewEngines\IViewResolver.cs">
       <Link>ViewEngines\IViewResolver.cs</Link>

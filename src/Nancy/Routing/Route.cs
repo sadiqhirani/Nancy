@@ -13,7 +13,7 @@
         /// <summary>
         /// Initializes a new instance of the <see cref="Route"/> type, with the specified <see cref="RouteDescription"/>.
         /// </summary>
-        /// <param name="description"></param>
+        /// <param name="description">An <see cref="RouteDescription"/> instance.</param>
         protected Route(RouteDescription description)
         {
             this.Description = description;
@@ -26,8 +26,9 @@
         /// <param name="method">The HTTP method that the route is declared for.</param>
         /// <param name="path">The path that the route is declared for.</param>
         /// <param name="condition">A condition that needs to be satisfied inorder for the route to be eligible for invocation.</param>
-        protected Route(string name, string method, string path, Func<NancyContext, bool> condition)
-            : this(new RouteDescription(name, method, path, condition))
+        /// <param name="returnType">The <see cref="Type"/> of the value returned by the route.</param>
+        protected Route(string name, string method, string path, Func<NancyContext, bool> condition, Type returnType)
+            : this(new RouteDescription(name, method, path, condition, returnType))
         {
         }
 
@@ -72,7 +73,7 @@
         /// <param name="condition">A condition that needs to be satisfied inorder for the route to be eligible for invocation.</param>
         /// <param name="action">The action that should take place when the route is invoked.</param>
         public Route(string name, string method, string path, Func<NancyContext, bool> condition, Func<object, CancellationToken, Task<T>> action)
-            : this(new RouteDescription(name, method, path, condition), action)
+            : this(new RouteDescription(name, method, path, condition, typeof(T)), action)
         {
         }
 
@@ -100,17 +101,9 @@
         /// <param name="parameters">A <see cref="DynamicDictionary"/> that contains the parameters that should be passed to the route.</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>A (hot) task of <see cref="Response"/> instance.</returns>
-        public override Task<object> Invoke(DynamicDictionary parameters, CancellationToken cancellationToken)
+        public override async Task<object> Invoke(DynamicDictionary parameters, CancellationToken cancellationToken)
         {
-            var task = this.Action.Invoke(parameters, cancellationToken);
-
-            var tcs = new TaskCompletionSource<object>();
-
-            task.ContinueWith(t => tcs.SetResult(t.Result), TaskContinuationOptions.OnlyOnRanToCompletion);
-            task.ContinueWith(t => tcs.SetException(t.Exception.InnerExceptions), TaskContinuationOptions.OnlyOnFaulted);
-            task.ContinueWith(t => tcs.SetCanceled(), TaskContinuationOptions.OnlyOnCanceled);
-
-            return tcs.Task;
+            return await this.Action.Invoke(parameters, cancellationToken).ConfigureAwait(false); 
         }
     }
 }

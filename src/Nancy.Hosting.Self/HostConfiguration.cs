@@ -54,6 +54,43 @@
         /// </summary>
         public bool AllowAuthorityFallback { get; set; }
 
+        /// <summary>
+        /// Gets or sets a property determining how many total connections the NancyHost can maintain simultaneously.
+        /// Higher values mean more conections can be maintained at a slower average response times; while fewer connections will be rejected.
+        /// Lower values will result in fewer conections, yet will be maintained at a faster average response time.
+        /// </summary>
+        public int MaximumConnectionCount { get; set; }
+
+        /// <summary>
+        /// Gets approximate processor thread count by halfing the Logical Core count to 
+        /// account for hyper-threading.
+        /// </summary>
+        private static int ProcessorThreadCount
+        {
+            get
+            {
+                // Divide by 2 for hyper-threading, and good defaults.
+                var threadCount = Environment.ProcessorCount >> 1;
+
+                if (threadCount < 1)
+                {
+                    // Ensure thread count is at least 1.
+                    return 1;
+                }
+
+                return threadCount;
+            }
+        }
+
+        /// <summary>
+        /// Initializes the default configuration.
+        /// MaximumConnectionCount by default is half of the Logical Core count.
+        /// </summary>
+        /// <remarks>
+        /// If the system running NancyHost is not using hyper-threading you may want to consider
+        /// supplying your own values for MaximumConnectionCount as the default assumes 
+        /// hyperthreading is being utilized.
+        /// </remarks>
         public HostConfiguration()
         {
             this.RewriteLocalhost = true;
@@ -65,6 +102,9 @@
                     Debug.Write(message);
                 };
             this.EnableClientCertificates = false;
+            this.MaximumConnectionCount = ProcessorThreadCount;
         }
+
+
     }
 }
