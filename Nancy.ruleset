@@ -2,7 +2,9 @@
 <RuleSet Name="Nancy" ToolsVersion="14.0">
   <Include Path="allrules.ruleset" Action="Default" />
   <Rules AnalyzerId="AsyncUsageAnalyzers" RuleNamespace="AsyncUsageAnalyzers">
-    <Rule Id="AvoidAsyncVoid" Action="Error" />
+    <Rule Id="AvoidAsyncSuffix" Action="None" />
+    <Rule Id="AvoidAsyncVoid" Action="None" />
+    <Rule Id="UseAsyncSuffix" Action="None" />
     <Rule Id="UseConfigureAwait" Action="Error" />
   </Rules>
   <Rules AnalyzerId="Microsoft.Analyzers.ManagedCodeAnalysis" RuleNamespace="Microsoft.Rules.Managed">
