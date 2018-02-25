@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 var target = Argument<string>("target", "Default");
 var source = Argument<string>("source", null);
 var apiKey = Argument<string>("apikey", null);
-var version = Argument<string>("targetversion", "2.0.0-Pre" + (EnvironmentVariable("APPVEYOR_BUILD_NUMBER") ?? "0"));
+var version = Argument<string>("targetversion", "2.0.0-pre" + (EnvironmentVariable("APPVEYOR_BUILD_NUMBER") ?? "0"));
 var nogit = Argument<bool>("nogit", false);
 
 // Variables
@@ -108,6 +108,17 @@ Task("Package-NuGet")
     {
         foreach(var project in GetFiles("./src/**/*.csproj"))
         {
+            Information("Packaging " + project.GetFilename().FullPath);
+
+            var content =
+                System.IO.File.ReadAllText(project.FullPath, Encoding.UTF8);
+
+            if (IsRunningOnUnix() && content.Contains(">" + fullFrameworkTarget + "<"))
+            {
+                Information(project.GetFilename() + " only supports " +fullFrameworkTarget + " and cannot be packaged on *nix. Skipping.");
+                continue;
+            }
+
             DotNetCorePack(project.GetDirectory().FullPath, new DotNetCorePackSettings {
                 Configuration = configuration,
                 OutputDirectory = outputNuGet
